@@ -1,0 +1,44 @@
+# Build and test files
+.vscode/
+.vscode/**
+.vscode-test/**
+out/test/**
+out/**/*.map
+src/**/*.ts
+src/**/*.js.map
+test/**
+__tests__/**
+*.vsix
+
+# Node modules
+node_modules/**
+
+# Development files
+.gitignore
+.gitattributes
+.eslintrc.json
+.prettierrc
+jest.config.json
+tsconfig.json
+tsconfig.test.json
+webpack.config.js
+vsc-extension-quickstart.md
+
+# Documentation and examples
+docs/
+examples/
+scripts/
+about.md
+test-servers.ts
+test-servers.js
+test-servers.js.map
+test-settings.json
+start-debug.sh
+
+# Logs and temp files
+*.log
+.DS_Store
+Thumbs.db
+
+# Development internal files
+forAI.txt

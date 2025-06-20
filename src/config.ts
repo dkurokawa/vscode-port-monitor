@@ -77,30 +77,30 @@ export class ConfigManager {
     public validateConfig(config: PortMonitorConfig): string[] {
         const errors: string[] = [];
 
-        // 監視間隔の検証
+        // Validate monitoring interval
         if (config.intervalMs < 1000) {
             errors.push('intervalMs must be at least 1000ms');
         }
 
-        // ホスト設定の検証
+        // Validate host configuration
         for (const [host, ports] of Object.entries(config.hosts)) {
-            // 単純配列またはカテゴリ別オブジェクトの両方をサポート
+            // Support both simple array and category-based object format
             if (Array.isArray(ports)) {
-                // 単純配列の場合
+                // Simple array case
                 for (const port of ports) {
                     if (typeof port === 'number') {
                         if (port < 1 || port > 65535) {
                             errors.push(`Invalid port number: ${port} (must be 1-65535)`);
                         }
                     } else if (typeof port === 'string') {
-                        // ポート範囲やwell-known名の検証は後で実装
+                        // Port range and well-known name validation will be implemented later
                         continue;
                     } else {
                         errors.push(`Invalid port type in hosts.${host}: ${typeof port}`);
                     }
                 }
             } else if (typeof ports === 'object' && ports !== null) {
-                // カテゴリ別オブジェクトの場合
+                // Category-based object case
                 for (const [category, categoryPorts] of Object.entries(ports)) {
                     if (!Array.isArray(categoryPorts)) {
                         errors.push(`hosts.${host}.${category} must be an array`);
@@ -113,7 +113,7 @@ export class ConfigManager {
                                 errors.push(`Invalid port number: ${port} (must be 1-65535)`);
                             }
                         } else if (typeof port === 'string') {
-                            // ポート範囲やwell-known名の検証は後で実装
+                            // Port range and well-known name validation will be implemented later
                             continue;
                         } else {
                             errors.push(`Invalid port type in hosts.${host}.${category}: ${typeof port}`);
@@ -129,9 +129,9 @@ export class ConfigManager {
     }
 
     /**
-     * ホスト設定を統一形式に変換（カテゴリ別設定対応）
-     * @param hostsConfig ホスト設定
-     * @returns 統一形式の設定配列
+     * Convert host configuration to unified format (category-based configuration support)
+     * @param hostsConfig Host configuration
+     * @returns Configuration array in unified format
      */
     public static parseHostsConfig(hostsConfig: Record<string, (string | number)[] | Record<string, (string | number)[]>>): Array<{
         host: string;
@@ -142,11 +142,11 @@ export class ConfigManager {
         
         for (const [host, config] of Object.entries(hostsConfig)) {
             if (Array.isArray(config)) {
-                // 単純配列の場合
+                // Simple array case
                 const ports = this.expandPorts(config);
                 result.push({ host, ports });
             } else if (typeof config === 'object' && config !== null) {
-                // カテゴリ別オブジェクトの場合
+                // Category-based object case
                 for (const [category, categoryPorts] of Object.entries(config)) {
                     if (Array.isArray(categoryPorts)) {
                         const ports = this.expandPorts(categoryPorts);
@@ -160,9 +160,9 @@ export class ConfigManager {
     }
 
     /**
-     * ポート配列を展開（範囲指定やwell-known名を数値に変換）
-     * @param ports ポート配列
-     * @returns 展開された数値ポート配列
+     * Expand port array (convert range specifications and well-known names to numeric values)
+     * @param ports Port array
+     * @returns Expanded numeric port array
      */
     private static expandPorts(ports: (string | number)[]): number[] {
         const expanded: number[] = [];
@@ -171,7 +171,7 @@ export class ConfigManager {
             if (typeof port === 'number') {
                 expanded.push(port);
             } else if (typeof port === 'string') {
-                // 範囲指定の場合 (例: "3000-3005")
+                // Range specification case (e.g., "3000-3005")
                 if (port.includes('-')) {
                     const [start, end] = port.split('-').map(Number);
                     if (!isNaN(start) && !isNaN(end)) {
@@ -180,7 +180,7 @@ export class ConfigManager {
                         }
                     }
                 } else {
-                    // well-known名の場合
+                    // Well-known name case
                     const wellKnownPort = this.getWellKnownPort(port);
                     if (wellKnownPort) {
                         expanded.push(wellKnownPort);
@@ -193,9 +193,9 @@ export class ConfigManager {
     }
 
     /**
-     * well-known名からポート番号を取得
-     * @param name well-known名
-     * @returns ポート番号
+     * Get port number from well-known name
+     * @param name Well-known name
+     * @returns Port number
      */
     private static getWellKnownPort(name: string): number | undefined {
         const wellKnownPorts: Record<string, number> = {

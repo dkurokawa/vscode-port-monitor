@@ -153,3 +153,6 @@ temp/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Development internal files
+forAI.txt

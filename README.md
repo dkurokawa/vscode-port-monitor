@@ -3,19 +3,19 @@
 [![Visual Studio Marketplace](https://img.shields.io/badge/Visual%20Studio-Marketplace-blue)](https://marketplace.visualstudio.com/items?itemName=)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-複数のホストとポートの状態をVS Codeのステータスバーでリアルタイム監視する拡張機能です。
+A VS Code extension for real-time monitoring of multiple hosts and ports with status display in the status bar.
 
-## ✨ 機能
+## ✨ Features
 
-- 🔍 **複数ホスト・ポートの同時監視** - 複数のサーバーやローカルポートを一括監視
-- 🏷️ **ポートラベル機能** - ポートに分かりやすい名前を付けて管理
-- 📊 **リアルタイム表示** - ステータスバーに監視結果を視覚的に表示
-- 🛑 **プロセス管理** - ワンクリックでポートを使用中のプロセスを停止
-- 📺 **ログ表示** - プロセスのstdout/stderr出力をリアルタイムで確認
-- ⚙️ **柔軟な設定** - ポート範囲やWell-knownポート名での指定が可能
-- 🎨 **カスタマイズ可能** - 表示アイコンや監視間隔を自由に設定
+- 🔍 **Multi-host & Multi-port Monitoring** - Monitor multiple servers and local ports simultaneously
+- 🏷️ **Port Labeling** - Assign meaningful names to ports for easy management
+- 📊 **Real-time Display** - Visual status display in VS Code status bar
+- 🛑 **Process Management** - Stop processes using ports with one click
+- 📺 **Log Viewer** - View real-time stdout/stderr output from processes
+- ⚙️ **Flexible Configuration** - Support for port ranges and well-known port names
+- 🎨 **Customizable** - Configure display icons and monitoring intervals
 
-## 📸 スクリーンショット
+## 📸 Screenshots
 
 ```
 localhost: 300[🟢user:0|🔴car:1|🔴2|🔴3|🟢4]
@@ -23,13 +23,13 @@ db-server.local: [🔴postgresql:5432]
 api-server: [🟢9000|🔴9001]
 ```
 
-## 🚀 使い方
+## 🚀 Quick Start
 
-### 1. インストール
-VS Code拡張機能マーケットプレースから「Port Monitor」をインストールしてください。
+### 1. Installation
+Install "Port Monitor" from the VS Code Extensions Marketplace.
 
-### 2. 設定
-`settings.json` に監視設定を追加します：
+### 2. Configuration
+Add monitoring configuration to your `settings.json`:
 
 ```json
 {
@@ -44,39 +44,39 @@ VS Code拡張機能マーケットプレースから「Port Monitor」をイン�
 }
 ```
 
-### 3. 監視開始
-設定後、自動的にポート監視が開始され、ステータスバーに結果が表示されます。
+### 3. Start Monitoring
+After configuration, port monitoring starts automatically and results are displayed in the status bar.
 
-### 4. プロセス管理
-- ステータスバーの表示をクリック
-- コンテキストメニューから「プロセス停止」を選択
-- 停止したいポートを選択して実行
+### 4. Process Management
+- Click status bar display
+- Select "Kill Process" from context menu
+- Choose the port/process to terminate
 
-### 5. ログ表示
-- 🟢アイコンをクリック（動作中のプロセス）
-- 「ログ表示」を選択してstdout/stderrを確認
+### 5. Log Viewer
+- Click 🟢 icon (running process)
+- Select "Show Log" to view real-time stdout/stderr output
 
-## ⚙️ 設定オプション
+## ⚙️ Configuration Options
 
-| 設定名 | 説明 | デフォルト |
-|--------|------|------------|
-| `portMonitor.hosts` | 監視対象のホストとポート | `{}` |
-| `portMonitor.portLabels` | ポートラベル設定（パターンマッチング対応） | `{}` |
-| `portMonitor.statusIcons` | ステータスアイコン設定 | `{"open": "🟢", "closed": "🔴"}` |
-| `portMonitor.intervalMs` | 監視間隔（ミリ秒、最小1000） | `3000` |
-| `portMonitor.displayOptions.separator` | ポート間の区切り文字 | `"|"` |
-| `portMonitor.displayOptions.showFullPortNumber` | 完全なポート番号を表示 | `false` |
-| `portMonitor.enableProcessKill` | プロセス停止機能の有効化 | `true` |
-| `portMonitor.enableLogViewer` | プロセスログ表示機能の有効化 | `true` |
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `portMonitor.hosts` | Hosts and ports to monitor | `{}` |
+| `portMonitor.portLabels` | Port labels with pattern matching support | `{}` |
+| `portMonitor.statusIcons` | Status icon configuration | `{"open": "🟢", "closed": "🔴"}` |
+| `portMonitor.intervalMs` | Monitoring interval in milliseconds (minimum 1000) | `3000` |
+| `portMonitor.displayOptions.separator` | Separator between ports | `"|"` |
+| `portMonitor.displayOptions.showFullPortNumber` | Show full port numbers | `false` |
+| `portMonitor.enableProcessKill` | Enable process kill functionality | `true` |
+| `portMonitor.enableLogViewer` | Enable process log viewer | `true` |
 
-### ポート指定方法
-- **数値**: `3000`
-- **範囲**: `"3000-3009"`
-- **Well-known名**: `"http"`, `"https"`, `"ssh"`, `"postgresql"` など
+### Port Specification Methods
+- **Number**: `3000`
+- **Range**: `"3000-3009"`
+- **Well-known names**: `"http"`, `"https"`, `"ssh"`, `"postgresql"`, etc.
 
-## 📝 設定例
+## 📝 Configuration Examples
 
-### 基本的な使用例
+### Basic Usage
 ```json
 {
   "portMonitor.hosts": {
@@ -86,7 +86,7 @@ VS Code拡張機能マーケットプレースから「Port Monitor」をイン�
 }
 ```
 
-### ラベル付きポート監視
+### Labeled Port Monitoring
 ```json
 {
   "portMonitor.hosts": {
@@ -94,35 +94,35 @@ VS Code拡張機能マーケットプレースから「Port Monitor」をイン�
   },
   "portMonitor.portLabels": {
     "3000": "frontend",
-    "3001": "backend",
+    "3001": "backend", 
     "3002": "database"
   }
 }
 ```
 
-### パターンマッチングを使用したラベル設定
+### Pattern Matching Labels
 ```json
 {
   "portMonitor.hosts": {
     "localhost": ["3000-3009", "8080"]
   },
   "portMonitor.portLabels": {
-    "3000": "main-app",    // 3000番は特別にmain-app
-    "300*": "dev-env",     // 3001-3009はdev-env
-    "8080": "proxy",       // 8080番はproxy
-    "*": "service"         // その他はservice
+    "3000": "main-app",     // 3000 specifically labeled as main-app
+    "300*": "dev-env",      // 3001-3009 labeled as dev-env
+    "8080": "proxy",        // 8080 labeled as proxy
+    "*": "service"          // Others labeled as service
   }
 }
 ```
 
-### 利用可能なパターン
-- `"3000"` - 完全一致
-- `"300*"` - 前方一致（3000, 3001, 3002...）
-- `"*80"` - 後方一致（80, 8080, 3080...）
-- `"30?0"` - 単一文字ワイルドカード（3000, 3010, 3020...）
-- `"*"` - 全ポート（最低優先度）
+### Available Patterns
+- `"3000"` - Exact match
+- `"300*"` - Prefix match (3000, 3001, 3002...)
+- `"*80"` - Suffix match (80, 8080, 3080...)
+- `"30?0"` - Single character wildcard (3000, 3010, 3020...)
+- `"*"` - All ports (lowest priority)
 
-### プロセス管理機能
+### Process Management
 ```json
 {
   "portMonitor.hosts": {
@@ -133,13 +133,13 @@ VS Code拡張機能マーケットプレースから「Port Monitor」をイン�
 }
 ```
 
-**操作方法**：
-1. ステータスバーの🟢または🔴アイコンをクリック
-2. 「プロセス停止」メニューを選択
-3. 停止したいポート/プロセスを選択
-4. 確認後、プロセスが安全に停止されます
+**How to use**:
+1. Click 🟢 or 🔴 icon in status bar
+2. Select "Kill Process" menu
+3. Choose the port/process to stop
+4. Confirm to safely terminate the process
 
-### ログ表示機能
+### Log Viewer
 ```json
 {
   "portMonitor.hosts": {
@@ -151,65 +151,97 @@ VS Code拡張機能マーケットプレースから「Port Monitor」をイン�
 }
 ```
 
-### 表示カスタマイズ
+### Display Customization
 ```json
 {
   "portMonitor.hosts": {
     "localhost": [3000, 5432, 8080]
   },
   "portMonitor.displayOptions": {
-    "separator": " • ",              // 区切り文字をカスタマイズ
-    "showFullPortNumber": true,      // 完全なポート番号を表示
-    "compactRanges": false           // 範囲圧縮を無効化
+    "separator": " • ",              // Customize separator
+    "showFullPortNumber": true,      // Show full port numbers
+    "compactRanges": false           // Disable range compression
   }
 }
 ```
 
-**表示例**：
-- デフォルト: `localhost: 300[🟢0|🔴1|🔴2]`
-- カスタム: `localhost: [🟢3000 • 🔴3001 • 🔴3002]`
-- 単体ポート: `db-server: [🔴postgresql:5432]`
+**Display Examples**:
+- Default: `localhost: 300[🟢0|🔴1|🔴2]`
+- Custom: `localhost: [🟢3000 • 🔴3001 • 🔴3002]`
+- Single port: `db-server: [🔴postgresql:5432]`
 
-**操作方法**：
-1. ステータスバーの🟢アイコンをクリック（動作中のプロセス）
-2. 「ログ表示」メニューを選択
-3. 新しいタブでプロセスのstdout/stderrをリアルタイム表示
-4. エラーログ、デバッグ情報、アクセスログなどを確認可能
+**How to use**:
+1. Click 🟢 icon (running process)
+2. Select "Show Log" menu
+3. View real-time stdout/stderr output in new tab
+4. Monitor error logs, debug info, access logs, etc.
 
-## 🔧 開発者向け情報
+## 📚 Rich Configuration Examples
 
-### 必要な依存関係
-- Node.js 14.x以上
-- VS Code 1.60.0以上
+Various configuration examples for different development environments:
 
-### ローカル開発
-```bash
-# リポジトリをクローン
-git clone https://github.com/username/vscode-port-monitor.git
-cd vscode-port-monitor
-
-# 依存関係をインストール
-npm install
-
-# 開発用ビルド
-npm run compile
-
-# デバッグ実行
-# F5キーでExtension Development Hostを起動
+### Next.js Development Environment (Recommended)
+```json
+{
+  "portMonitor.hosts": {
+    "Next.js Development": {
+      "localhost": [3000, 3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009]
+    }
+  },
+  "portMonitor.portLabels": {
+    "3000": "Main App",
+    "3001": "Admin Panel",
+    "3002": "Storybook",
+    "3003-3009": "Feature Branches"
+  }
+}
 ```
 
-## 🐛 バグ報告・機能要求
+### Detailed Configuration Examples
+- **[examples/SAMPLE_CONFIGURATIONS.md](./examples/SAMPLE_CONFIGURATIONS.md)** - 50+ framework and technology-specific configurations
+- **[examples/USE_CASE_EXAMPLES.md](./examples/USE_CASE_EXAMPLES.md)** - 10 practical development scenario configurations
 
-問題を発見した場合や新機能のご要望は、[GitHub Issues](https://github.com/username/vscode-port-monitor/issues)にお寄せください。
+Supported Development Environments:
+- **Frontend**: Next.js, React, Vue.js, Angular, Svelte
+- **Backend**: Express, NestJS, Django, Flask, Spring Boot
+- **Database**: PostgreSQL, MySQL, MongoDB, Redis
+- **Architecture**: Microservices, Full-stack, JAMstack
+- **Use Cases**: E-Commerce, SaaS, Mobile, AI/ML, Gaming
 
-## 📄 ライセンス
+## 🔧 Developer Information
 
-MIT License - 詳細は[LICENSE](LICENSE)ファイルをご確認ください。
+### Requirements
+- Node.js 14.x or higher
+- VS Code 1.60.0 or higher
 
-## 🤝 コントリビューション
+### Local Development
+```bash
+# Clone repository
+git clone https://github.com/dkurokawa/vscode-port-monitor.git
+cd vscode-port-monitor
 
-プルリクエストやイシューを歓迎します！詳細は[SPECIFICATION.md](SPECIFICATION.md)をご確認ください。
+# Install dependencies
+npm install
+
+# Build for development
+npm run compile
+
+# Debug execution
+# Press F5 to launch Extension Development Host
+```
+
+## 🐛 Bug Reports & Feature Requests
+
+For bug reports or feature requests, please create an issue on [GitHub Issues](https://github.com/dkurokawa/vscode-port-monitor/issues).
+
+## 📄 License
+
+MIT License - See [LICENSE](LICENSE) file for details.
+
+## 🤝 Contributing
+
+Pull requests and issues are welcome! See [docs/SPECIFICATION.md](docs/SPECIFICATION.md) for details.
 
 ---
 
-**開発状況**: 🚧 現在開発中です
+**Development Status**: 🚧 Currently under active development

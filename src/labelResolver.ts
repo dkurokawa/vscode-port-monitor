@@ -2,8 +2,8 @@ import { PatternMatcher } from './patternMatcher';
 import { PortRange } from './portRange';
 
 /**
- * ラベル解決クラス
- * ポート番号からラベルを解決し、表示名を生成する
+ * Label resolver class
+ * Resolves labels from port numbers and generates display names
  */
 export class LabelResolver {
     private labelPatterns: Record<string, string>;
@@ -13,9 +13,9 @@ export class LabelResolver {
     }
 
     /**
-     * ポート番号からラベルを解決
-     * @param port ポート番号
-     * @returns ラベル（見つからない場合はundefined）
+     * Resolve label from port number
+     * @param port Port number
+     * @returns Label (undefined if not found)
      */
     public resolveLabel(port: number): string | undefined {
         const patterns = Object.keys(this.labelPatterns);
@@ -24,12 +24,12 @@ export class LabelResolver {
     }
 
     /**
-     * ポート番号から表示名を生成
-     * @param port ポート番号
-     * @param label 設定されたラベル（オプション）
-     * @param showPortNumber ポート番号を表示するか
-     * @param useWellKnownNames well-known名を使用するか
-     * @returns 表示名
+     * Generate display name from port number
+     * @param port Port number
+     * @param label Configured label (optional)
+     * @param showPortNumber Whether to show port number
+     * @param useWellKnownNames Whether to use well-known names
+     * @returns Display name
      */
     public getDisplayName(
         port: number,
@@ -37,84 +37,84 @@ export class LabelResolver {
         showPortNumber: boolean = true,
         useWellKnownNames: boolean = true
     ): string {
-        // 明示的なラベルが設定されている場合
+        // If explicit label is configured
         if (label) {
             return showPortNumber ? `${label}:${port}` : label;
         }
 
-        // パターンマッチングでラベルを解決
+        // Resolve label through pattern matching
         const resolvedLabel = this.resolveLabel(port);
         if (resolvedLabel) {
             return showPortNumber ? `${resolvedLabel}:${port}` : resolvedLabel;
         }
 
-        // well-known名を使用する場合
+        // Use well-known names if enabled
         if (useWellKnownNames) {
             const wellKnownName = PortRange.getPortName(port);
             if (wellKnownName) {
-                // well-known名は常にポート番号付きで表示
+                // Well-known names are always displayed with port number
                 return `${wellKnownName}:${port}`;
             }
         }
 
-        // デフォルトはポート番号のみ
+        // Default is port number only
         return port.toString();
     }
 
     /**
-     * ポート番号から短縮表示名を生成（ステータスバー用）
-     * @param port ポート番号
-     * @param label 設定されたラベル（オプション）
-     * @param showFullPortNumber 完全なポート番号を表示するか
-     * @returns 短縮表示名
+     * Generate short display name from port number (for status bar)
+     * @param port Port number
+     * @param label Configured label (optional)
+     * @param showFullPortNumber Whether to show full port number
+     * @returns Short display name
      */
     public getShortDisplayName(
         port: number,
         label?: string,
         showFullPortNumber: boolean = false
     ): string {
-        // 明示的なラベルが設定されている場合
+        // If explicit label is configured
         if (label) {
             return showFullPortNumber ? `${label}:${port}` : label;
         }
 
-        // パターンマッチングでラベルを解決
+        // Resolve label through pattern matching
         const resolvedLabel = this.resolveLabel(port);
         if (resolvedLabel) {
             return showFullPortNumber ? `${resolvedLabel}:${port}` : resolvedLabel;
         }
 
-        // well-known名をチェック
+        // Check well-known names
         const wellKnownName = PortRange.getPortName(port);
         if (wellKnownName) {
-            // well-known名は常にポート番号付きで表示
+            // Well-known names are always displayed with port number
             return `${wellKnownName}:${port}`;
         }
 
-        // デフォルトはポート番号（短縮可能）
+        // Default is port number (can be shortened)
         return showFullPortNumber ? port.toString() : port.toString().slice(-1);
     }
 
     /**
-     * ラベル設定を更新
-     * @param labelConfig 新しいラベル設定
+     * Update label configuration
+     * @param labelConfig New label configuration
      */
     public updateLabels(labelConfig: Record<string, string>): void {
         this.labelPatterns = labelConfig;
     }
 
     /**
-     * 現在のラベル設定を取得
-     * @returns ラベル設定
+     * Get current label configuration
+     * @returns Label configuration
      */
     public getLabels(): Record<string, string> {
         return { ...this.labelPatterns };
     }
 
     /**
-     * 特定のポートに設定されたパターンを取得（デバッグ用）
-     * @param port ポート番号
-     * @returns マッチしたパターンとラベル
+     * Get pattern set for specific port (for debugging)
+     * @param port Port number
+     * @returns Matched pattern and label
      */
     public getMatchInfo(port: number): { pattern?: string, label?: string } {
         const patterns = Object.keys(this.labelPatterns);
@@ -173,9 +173,15 @@ export class LabelResolver {
      * ポートの表示名を取得（ラベル優先、なければwell-known名）
      */
     private getPortDisplayName(portInfo: { port: number; label?: string; category?: string }): string {
-        // ラベルが設定されている場合
+        // 明示的なラベルが設定されている場合
         if (portInfo.label) {
             return portInfo.label;
+        }
+
+        // パターンマッチングでラベルを解決
+        const resolvedLabel = this.resolveLabel(portInfo.port);
+        if (resolvedLabel) {
+            return resolvedLabel;
         }
 
         // well-known名をチェック
@@ -225,15 +231,18 @@ export class LabelResolver {
             const icon = pair.isOpen ? statusIcons.open : statusIcons.closed;
             
             if (pair.displayName) {
+                // well-known名は常にポート番号付きで表示
+                const wellKnownName = PortRange.getPortName(pair.port);
+                if (wellKnownName) {
+                    return `${icon}${pair.displayName}:${pair.port}`;
+                }
+                
                 const portSuffix = displayOptions.showFullPortNumber 
                     ? `:${pair.port}` 
                     : '';
                 return `${icon}${pair.displayName}${portSuffix}`;
             } else {
-                const portStr = displayOptions.showFullPortNumber 
-                    ? pair.port.toString()
-                    : pair.port.toString().slice(-1);
-                return `${icon}${portStr}`;
+                return `${icon}${pair.port}`;
             }
         });
 
@@ -334,6 +343,12 @@ export class LabelResolver {
                 const icon = pair.isOpen ? statusIcons.open : statusIcons.closed;
                 
                 if (pair.displayName) {
+                    // well-known名は常にポート番号付きで表示
+                    const wellKnownName = PortRange.getPortName(pair.port);
+                    if (wellKnownName) {
+                        return `${icon}${pair.displayName}:${pair.port}`;
+                    }
+                    
                     // ラベルがある場合
                     if (displayOptions.showFullPortNumber) {
                         return `${icon}${pair.displayName}:${pair.port}`;

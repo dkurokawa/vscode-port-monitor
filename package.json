@@ -3,7 +3,16 @@
   "displayName": "Port Monitor",
   "description": "Monitor multiple hosts and ports with real-time status display in VS Code status bar",
   "version": "0.1.0",
-  "publisher": "your-publisher",
+  "publisher": "dkurokawa",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dkurokawa/vscode-port-monitor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dkurokawa/vscode-port-monitor/issues"
+  },
+  "homepage": "https://github.com/dkurokawa/vscode-port-monitor#readme",
   "engines": {
     "vscode": "^1.60.0"
   },
@@ -138,7 +147,10 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "compile-test": "tsc -p ./tsconfig.test.json",
-    "start-test-servers": "npm run compile-test && node out/test-servers.js"
+    "start-test-servers": "npm run compile-test && node out/test-servers.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
