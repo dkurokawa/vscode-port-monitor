@@ -1,0 +1,154 @@
+{
+  "name": "vscode-port-monitor",
+  "displayName": "Port Monitor",
+  "description": "Monitor multiple hosts and ports with real-time status display in VS Code status bar",
+  "version": "0.1.0",
+  "publisher": "your-publisher",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "port",
+    "monitor",
+    "network",
+    "status",
+    "process"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Port Monitor",
+      "properties": {
+        "portMonitor.hosts": {
+          "type": "object",
+          "default": {},
+          "description": "Hosts and ports to monitor"
+        },
+        "portMonitor.portLabels": {
+          "type": "object",
+          "default": {},
+          "description": "Port labels with pattern matching support"
+        },
+        "portMonitor.statusIcons": {
+          "type": "object",
+          "default": {
+            "open": "🟢",
+            "closed": "🔴"
+          },
+          "description": "Status icons for open/closed ports"
+        },
+        "portMonitor.intervalMs": {
+          "type": "number",
+          "default": 3000,
+          "minimum": 1000,
+          "description": "Monitoring interval in milliseconds"
+        },
+        "portMonitor.enableProcessKill": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable process kill functionality"
+        },
+        "portMonitor.confirmBeforeKill": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show confirmation dialog before killing process"
+        },
+        "portMonitor.enableLogViewer": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable process log viewer"
+        },
+        "portMonitor.logBufferSize": {
+          "type": "number",
+          "default": 1000,
+          "description": "Log buffer size in lines"
+        },
+        "portMonitor.autoScrollLog": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto scroll log output"
+        },
+        "portMonitor.displayOptions": {
+          "type": "object",
+          "default": {
+            "separator": "|",
+            "showFullPortNumber": false,
+            "compactRanges": true,
+            "maxDisplayLength": 100
+          },
+          "properties": {
+            "separator": {
+              "type": "string",
+              "default": "|",
+              "description": "Separator between ports"
+            },
+            "showFullPortNumber": {
+              "type": "boolean",
+              "default": false,
+              "description": "Show full port numbers instead of last digit"
+            },
+            "compactRanges": {
+              "type": "boolean",
+              "default": true,
+              "description": "Use compact display for port ranges"
+            },
+            "maxDisplayLength": {
+              "type": "number",
+              "default": 100,
+              "minimum": 50,
+              "maximum": 200,
+              "description": "Maximum length of status bar display text"
+            }
+          },
+          "description": "Display options for port monitoring"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "portMonitor.refresh",
+        "title": "Refresh Port Status",
+        "category": "Port Monitor"
+      },
+      {
+        "command": "portMonitor.killProcess",
+        "title": "Kill Process",
+        "category": "Port Monitor"
+      },
+      {
+        "command": "portMonitor.showLog",
+        "title": "Show Process Log",
+        "category": "Port Monitor"
+      },
+      {
+        "command": "portMonitor.openSettings",
+        "title": "Open Settings",
+        "category": "Port Monitor"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "compile-test": "tsc -p ./tsconfig.test.json",
+    "start-test-servers": "npm run compile-test && node out/test-servers.js"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "16.x",
+    "@types/vscode": "^1.60.0",
+    "jest": "^30.0.2",
+    "ts-jest": "^29.4.0",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "tcp-port-used": "^1.0.2"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "portMonitor.hosts": {
+    "localhost": {
+      "Next.js": [3000, 3001, "3002-3009"],
+      "Web": ["http", "https"]
+    },
+    "127.0.0.1": {
+      "Services": ["ssh", "postgresql"],
+      "Development": [8080, "8081-8090"]
+    }
+  },
+  "portMonitor.portLabels": {
+    "3000": "frontend",
+    "3001": "backend",
+    "300*": "dev-env",
+    "80": "web",
+    "443": "secure-web",
+    "*": "other"
+  },
+  "portMonitor.statusIcons": {
+    "open": "🟢",
+    "closed": "🔴"
+  },
+  "portMonitor.displayOptions": {
+    "separator": "|",
+    "showFullPortNumber": false,
+    "compactRanges": true
+  },
+  "portMonitor.intervalMs": 3000,
+  "portMonitor.enableProcessKill": true,
+  "portMonitor.confirmBeforeKill": true,
+  "portMonitor.enableLogViewer": true,
+  "portMonitor.logBufferSize": 1000,
+  "portMonitor.autoScrollLog": true
+}

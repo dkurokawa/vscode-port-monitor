@@ -1,0 +1,34 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "npm",
+            "script": "compile",
+            "group": "build",
+            "presentation": {
+                "panel": "shared",
+                "reveal": "silent",
+                "clear": false,
+                "showReuseMessage": true
+            },
+            "problemMatcher": [
+                "$tsc"
+            ]
+        },
+        {
+            "type": "npm",
+            "script": "watch",
+            "group": "build",
+            "presentation": {
+                "panel": "shared",
+                "reveal": "never",
+                "clear": false,
+                "showReuseMessage": true
+            },
+            "isBackground": true,
+            "problemMatcher": [
+                "$tsc-watch"
+            ]
+        }
+    ]
+}
