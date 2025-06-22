@@ -28,26 +28,68 @@ api-server: [🟢9000|🔴9001]
 ### 1. Installation
 Install "Port Monitor" from the VS Code Extensions Marketplace.
 
-### 2. Configuration
-Add monitoring configuration to your `settings.json`:
+### 2. Basic Configuration
+Add this to your VS Code settings (File → Preferences → Settings → Open JSON):
 
 ```json
 {
   "portMonitor.hosts": {
-    "localhost": [3000, 3001, "3002-3004"],
-    "db-server.local": ["postgresql"]
-  },
-  "portMonitor.portLabels": {
-    "3000": "user",
-    "3001": "car"
+    "localhost": {
+      "admin": 3000,
+      "app": 3001,
+      "user": 3002
+    }
   }
 }
 ```
 
-### 3. Start Monitoring
-After configuration, port monitoring starts automatically and results are displayed in the status bar.
+### 3. See Results
+You'll see this in your status bar: `[🟢admin:3000|🟢app:3001|🔴user:3002]`
 
-### 4. Process Management
+- 🟢 = Port is open (service running)
+- 🔴 = Port is closed (service not running)
+
+## 📋 Configuration Examples
+
+### Multiple Servers
+```json
+{
+  "portMonitor.hosts": {
+    "localhost": {
+      "frontend": 3000,
+      "backend": 3001
+    },
+    "db-server": {
+      "postgres": 5432,
+      "redis": 6379
+    }
+  }
+}
+```
+
+### Custom Icons
+```json
+{
+  "portMonitor.statusIcons": {
+    "open": "✅",
+    "closed": "❌"
+  }
+}
+```
+
+### Development Environment
+```json
+{
+  "portMonitor.hosts": {
+    "localhost": {
+      "react": 3000,
+      "node": 3001,
+      "webpack": 8080,
+      "storybook": 6006
+    }
+  }
+}
+```
 - Click status bar display
 - Select "Kill Process" from context menu
 - Choose the port/process to terminate

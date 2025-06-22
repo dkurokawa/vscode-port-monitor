@@ -36,13 +36,14 @@
       "properties": {
         "portMonitor.hosts": {
           "type": "object",
-          "default": {},
-          "description": "Hosts and ports to monitor"
-        },
-        "portMonitor.portLabels": {
-          "type": "object",
-          "default": {},
-          "description": "Port labels with pattern matching support"
+          "default": {
+            "localhost": {
+              "admin": 3000,
+              "app": 3001,
+              "user": 3002
+            }
+          },
+          "description": "Hosts and labeled ports to monitor. Format: {\"host\": {\"label\": port}}"
         },
         "portMonitor.statusIcons": {
           "type": "object",
@@ -57,65 +58,6 @@
           "default": 3000,
           "minimum": 1000,
           "description": "Monitoring interval in milliseconds"
-        },
-        "portMonitor.enableProcessKill": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable process kill functionality"
-        },
-        "portMonitor.confirmBeforeKill": {
-          "type": "boolean",
-          "default": true,
-          "description": "Show confirmation dialog before killing process"
-        },
-        "portMonitor.enableLogViewer": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable process log viewer"
-        },
-        "portMonitor.logBufferSize": {
-          "type": "number",
-          "default": 1000,
-          "description": "Log buffer size in lines"
-        },
-        "portMonitor.autoScrollLog": {
-          "type": "boolean",
-          "default": true,
-          "description": "Auto scroll log output"
-        },
-        "portMonitor.displayOptions": {
-          "type": "object",
-          "default": {
-            "separator": "|",
-            "showFullPortNumber": false,
-            "compactRanges": true,
-            "maxDisplayLength": 100
-          },
-          "properties": {
-            "separator": {
-              "type": "string",
-              "default": "|",
-              "description": "Separator between ports"
-            },
-            "showFullPortNumber": {
-              "type": "boolean",
-              "default": false,
-              "description": "Show full port numbers instead of last digit"
-            },
-            "compactRanges": {
-              "type": "boolean",
-              "default": true,
-              "description": "Use compact display for port ranges"
-            },
-            "maxDisplayLength": {
-              "type": "number",
-              "default": 100,
-              "minimum": 50,
-              "maximum": 200,
-              "description": "Maximum length of status bar display text"
-            }
-          },
-          "description": "Display options for port monitoring"
         }
       }
     },
@@ -123,11 +65,6 @@
       {
         "command": "portMonitor.refresh",
         "title": "Refresh Port Status",
-        "category": "Port Monitor"
-      },
-      {
-        "command": "portMonitor.killProcess",
-        "title": "Kill Process",
         "category": "Port Monitor"
       },
       {

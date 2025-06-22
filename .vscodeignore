@@ -28,12 +28,6 @@ vsc-extension-quickstart.md
 docs/
 examples/
 scripts/
-about.md
-test-servers.ts
-test-servers.js
-test-servers.js.map
-test-settings.json
-start-debug.sh
 
 # Logs and temp files
 *.log

@@ -1,33 +1,26 @@
 import * as vscode from 'vscode';
 import { ConfigManager, PortInfo, PortMonitorConfig } from './config';
-import { PortRange } from './portRange';
-import { LabelResolver } from './labelResolver';
 import { PortMonitor } from './monitor';
-import { ProcessManager } from './processManager';
-import { LogViewer } from './logViewer';
 
 export class PortMonitorExtension {
-    private statusBarItems: Map<string, vscode.StatusBarItem> = new Map();
+    private statusBarItem: vscode.StatusBarItem;
     private monitor: PortMonitor;
     private configManager: ConfigManager;
-    private labelResolver: LabelResolver;
-    private processManager: ProcessManager;
-    private logViewer: LogViewer;
     private currentMonitorId?: string;
     private disposables: vscode.Disposable[] = [];
 
     constructor(private context: vscode.ExtensionContext) {
         this.monitor = new PortMonitor();
         this.configManager = ConfigManager.getInstance();
-        this.labelResolver = new LabelResolver({});
-        this.processManager = new ProcessManager();
-        this.logViewer = new LogViewer(context);
+        this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 200);
+        this.statusBarItem.command = 'portMonitor.refresh';
+        this.statusBarItem.show();
         
         this.initialize();
     }
 
     private initialize(): void {
-        // 設定変更の監視
+        // Watch for configuration changes
         const configChangeDisposable = vscode.workspace.onDidChangeConfiguration(event => {
             if (event.affectsConfiguration('portMonitor')) {
                 this.onConfigurationChanged();
@@ -35,17 +28,16 @@ export class PortMonitorExtension {
         });
         this.disposables.push(configChangeDisposable);
 
-        // コマンドの登録
+        // Register commands
         this.registerCommands();
 
-        // 初期設定の読み込みと監視開始
+        // Load initial configuration and start monitoring
         this.onConfigurationChanged();
     }
 
     private registerCommands(): void {
         const commands = [
             vscode.commands.registerCommand('portMonitor.refresh', () => this.refreshPortStatus()),
-            vscode.commands.registerCommand('portMonitor.killProcess', (portInfo?: PortInfo) => this.killProcess(portInfo)),
             vscode.commands.registerCommand('portMonitor.showLog', (portInfo?: PortInfo) => this.showProcessLog(portInfo)),
             vscode.commands.registerCommand('portMonitor.openSettings', () => this.openSettings())
         ];
@@ -53,204 +45,112 @@ export class PortMonitorExtension {
         this.disposables.push(...commands);
     }
 
-    private onConfigurationChanged(): void {
+    private async onConfigurationChanged(): Promise<void> {
         this.configManager.refresh();
         const config = this.configManager.getConfig();
 
-        // 設定の検証
+        // Validate configuration
         const errors = this.configManager.validateConfig(config);
         if (errors.length > 0) {
-            vscode.window.showErrorMessage(`Port Monitor configuration errors: ${errors.join(', ')}`);
+            vscode.window.showErrorMessage(`Port Monitor configuration error: ${errors.join(', ')}`);
             return;
         }
 
-        // ラベルリゾルバーの更新
-        this.labelResolver.updateLabels(config.portLabels);
-
-        // 監視の再開始
-        this.restartMonitoring();
-    }
-
-    private restartMonitoring(): void {
-        // 既存の監視を停止
+        // Stop current monitoring
         if (this.currentMonitorId) {
             this.monitor.stopMonitoring(this.currentMonitorId);
         }
 
-        const config = this.configManager.getConfig();
-        
-        // カテゴリ別設定を解析
+        // Parse configuration
         const hostConfigs = ConfigManager.parseHostsConfig(config.hosts);
 
         if (hostConfigs.length === 0) {
-            this.clearStatusBar();
+            this.statusBarItem.text = "Port Monitor: No ports configured";
+            this.statusBarItem.tooltip = "Click to open settings";
             return;
         }
 
-        // 新しい監視を開始（カテゴリ対応）
-        this.currentMonitorId = this.monitor.startMonitoringWithConfigs(
+        // Start monitoring
+        this.currentMonitorId = await this.monitor.startMonitoring(
             hostConfigs,
             config.intervalMs,
-            (results) => this.updateStatusBar(results, config)
+            (results) => this.onPortStatusChanged(results, config)
         );
     }
 
-    private updateStatusBar(results: Record<string, PortInfo[]>, config: PortMonitorConfig): void {
-        // 既存のステータスバーアイテムをクリア
-        this.clearStatusBar();
-
-        for (const [host, portInfos] of Object.entries(results)) {
-            if (portInfos.length === 0) continue;
-
-            // 設定に基づいて位置を決定
-            const alignment = config.displayOptions.statusBarPosition === 'left' 
-                ? vscode.StatusBarAlignment.Left 
-                : vscode.StatusBarAlignment.Right;
-            const priority = config.displayOptions.statusBarPriority;
-            
-            const statusBarItem = vscode.window.createStatusBarItem(alignment, priority);
-            
-            // ポート情報にラベルを追加
-            const enrichedPortInfos = portInfos.map(p => ({
-                port: p.port,
-                isOpen: p.isOpen,
-                category: p.category,
-                label: p.label || this.labelResolver.resolveLabel(p.port)
-            }));
-
-            // 新しい表示形式を使用
-            let displayText = this.labelResolver.generateHostDisplay(
-                host,
-                enrichedPortInfos,
-                config.statusIcons,
-                config.displayOptions
-            );
-
-            // 表示文字列が長すぎる場合は省略
-            const maxLength = config.displayOptions.maxDisplayLength || 100;
-            if (displayText.length > maxLength) {
-                displayText = displayText.substring(0, maxLength - 3) + '...';
+    private onPortStatusChanged(results: PortInfo[], config: PortMonitorConfig): void {
+        // Group by host
+        const hostGroups = results.reduce((acc, port) => {
+            if (!acc[port.host]) {
+                acc[port.host] = [];
             }
+            acc[port.host].push(port);
+            return acc;
+        }, {} as Record<string, PortInfo[]>);
 
-            statusBarItem.text = displayText;
-            statusBarItem.tooltip = this.generateTooltip(host, portInfos);
-            statusBarItem.command = {
-                command: 'portMonitor.showMenu',
-                title: 'Show Port Monitor Menu',
-                arguments: [host, portInfos]
-            };
-
-            statusBarItem.show();
-            this.statusBarItems.set(host, statusBarItem);
-        }
-    }
-
-    private generateDisplayText(
-        host: string, 
-        portInfos: PortInfo[], 
-        portDisplays: string[], 
-        config: PortMonitorConfig
-    ): string {
-        const separator = config.displayOptions.separator;
-        const showFullPortNumber = config.displayOptions.showFullPortNumber;
-        const compactRanges = config.displayOptions.compactRanges;
-
-        // 区切り文字でポートを結合
-        const portsText = portDisplays.join(separator);
-
-        // 範囲圧縮が有効で、完全ポート番号表示でない場合、共通プレフィックスを計算
-        if (compactRanges && !showFullPortNumber && portInfos.length > 1) {
-            const commonPrefix = this.getCommonPrefix(portInfos.map(p => p.port.toString()));
-            if (commonPrefix) {
-                return `${host}: ${commonPrefix}[${portsText}]`;
+        // Generate display text
+        const hostDisplays: string[] = [];
+        for (const [host, ports] of Object.entries(hostGroups)) {
+            const portDisplays = ports.map(port => {
+                const icon = port.isOpen ? config.statusIcons.open : config.statusIcons.closed;
+                return `${icon}${port.label}:${port.port}`;
+            });
+            
+            if (host === 'localhost') {
+                hostDisplays.push(`[${portDisplays.join('|')}]`);
+            } else {
+                hostDisplays.push(`${host}:[${portDisplays.join('|')}]`);
             }
         }
 
-        // デフォルト表示
-        return `${host}: [${portsText}]`;
+        const displayText = hostDisplays.join(' ');
+        this.statusBarItem.text = displayText;
+        this.statusBarItem.tooltip = this.generateTooltip(results);
     }
 
-    private generateTooltip(host: string, portInfos: PortInfo[]): string {
-        const lines = [`Port Monitor - ${host}`];
-        
-        for (const portInfo of portInfos) {
-            const status = portInfo.isOpen ? 'Open' : 'Closed';
-            const label = this.labelResolver.resolveLabel(portInfo.port);
-            const labelText = label ? ` (${label})` : '';
-            const processText = portInfo.processName ? ` - ${portInfo.processName}` : '';
-            
-            lines.push(`  Port ${portInfo.port}${labelText}: ${status}${processText}`);
-        }
-
+    private generateTooltip(results: PortInfo[]): string {
+        const lines = results.map(port => {
+            const status = port.isOpen ? 'OPEN' : 'CLOSED';
+            let line = `${port.host}:${port.port} (${port.label}) - ${status}`;
+            if (port.isOpen && port.processName) {
+                line += ` - ${port.processName}`;
+                if (port.pid) {
+                    line += ` (PID: ${port.pid})`;
+                }
+            }
+            return line;
+        });
         return lines.join('\n');
     }
 
-    private getCommonPrefix(strings: string[]): string {
-        if (strings.length === 0) return '';
-        if (strings.length === 1) return '';
-
-        let prefix = strings[0];
-        for (let i = 1; i < strings.length; i++) {
-            while (strings[i].indexOf(prefix) !== 0) {
-                prefix = prefix.substring(0, prefix.length - 1);
-                if (prefix === '') return '';
-            }
-        }
-
-        // 意味のあるプレフィックスのみ返す（最低2文字）
-        return prefix.length >= 2 ? prefix : '';
-    }
-
-    private clearStatusBar(): void {
-        for (const statusBarItem of this.statusBarItems.values()) {
-            statusBarItem.dispose();
-        }
-        this.statusBarItems.clear();
-    }
-
     private async refreshPortStatus(): Promise<void> {
-        // 手動更新の場合は即座に監視を実行
-        this.restartMonitoring();
-        vscode.window.showInformationMessage('Port status refreshed');
-    }
-
-    private async killProcess(portInfo?: PortInfo): Promise<void> {
-        if (!portInfo) {
-            // ポート情報が指定されていない場合は、選択UI を表示
-            const config = this.configManager.getConfig();
-            const allPortInfos: PortInfo[] = [];
-            
-            // 現在監視中のポート情報を取得
-            const hostConfigs = ConfigManager.parseHostsConfig(config.hosts);
-            
-            const results = await this.monitor.checkHostConfigs(hostConfigs);
-            for (const portInfos of Object.values(results)) {
-                allPortInfos.push(...portInfos.filter(p => p.isOpen));
-            }
-            
-            if (allPortInfos.length === 0) {
-                vscode.window.showInformationMessage('No running processes found');
-                return;
-            }
-            
-            await this.processManager.killMultipleProcesses(allPortInfos, config.confirmBeforeKill);
-        } else {
-            const config = this.configManager.getConfig();
-            await this.processManager.killProcess(portInfo, config.confirmBeforeKill);
+        if (this.currentMonitorId) {
+            await this.monitor.forceUpdate(this.currentMonitorId);
+            vscode.window.showInformationMessage('Port status refreshed');
         }
     }
 
     private async showProcessLog(portInfo?: PortInfo): Promise<void> {
         if (!portInfo) {
-            vscode.window.showInformationMessage('Please select a specific port to view logs');
+            vscode.window.showInformationMessage('Please select a port first');
             return;
         }
 
-        const config = this.configManager.getConfig();
-        await this.logViewer.showProcessLog(portInfo, {
-            logBufferSize: config.logBufferSize,
-            autoScrollLog: config.autoScrollLog
+        if (!portInfo.isOpen) {
+            vscode.window.showInformationMessage('Port is not open');
+            return;
+        }
+
+        // Simple log viewing - open a new document
+        const doc = await vscode.workspace.openTextDocument({
+            content: `Port ${portInfo.port} on ${portInfo.host} (${portInfo.label})\n` +
+                    `Process: ${portInfo.processName || 'Unknown'}\n` +
+                    `PID: ${portInfo.pid || 'Unknown'}\n\n` +
+                    `Log monitoring is available in future versions.\n` +
+                    `Click the status bar to refresh or check process details.`,
+            language: 'plaintext'
         });
+        await vscode.window.showTextDocument(doc);
     }
 
     private openSettings(): void {
@@ -258,34 +158,23 @@ export class PortMonitorExtension {
     }
 
     public dispose(): void {
-        // 監視停止
         if (this.currentMonitorId) {
             this.monitor.stopMonitoring(this.currentMonitorId);
         }
-
-        // ステータスバーアイテムの削除
-        this.clearStatusBar();
-
-        // ログビューアの削除
-        this.logViewer.dispose();
-
-        // Disposableの削除
+        
+        this.statusBarItem.dispose();
+        
         for (const disposable of this.disposables) {
             disposable.dispose();
         }
     }
 }
 
-// 拡張機能のエントリーポイント
 export function activate(context: vscode.ExtensionContext) {
-    console.log('Port Monitor extension is now active');
-    
     const extension = new PortMonitorExtension(context);
-    context.subscriptions.push({
-        dispose: () => extension.dispose()
-    });
+    context.subscriptions.push(extension);
 }
 
 export function deactivate() {
-    console.log('Port Monitor extension is now deactivated');
+    // Extension cleanup is handled by dispose()
 }
