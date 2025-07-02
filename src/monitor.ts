@@ -1,4 +1,4 @@
-const tcpPortUsed = require('tcp-port-used');
+import * as net from 'net';
 import { PortInfo } from './config';
 
 /**
@@ -16,7 +16,7 @@ export class PortMonitor {
      */
     public async checkPort(host: string, port: number, label: string): Promise<PortInfo> {
         try {
-            const isOpen = await tcpPortUsed.check(port, host);
+            const isOpen = await this.isPortOpen(host, port);
             const portInfo: PortInfo = {
                 host,
                 port,
@@ -158,6 +158,38 @@ export class PortMonitor {
         }
         
         return null;
+    }
+
+    /**
+     * Check if a port is open using native Node.js net module
+     * @param host Host to check
+     * @param port Port to check
+     * @returns Promise<boolean> true if port is open
+     */
+    private async isPortOpen(host: string, port: number): Promise<boolean> {
+        return new Promise((resolve) => {
+            const socket = new net.Socket();
+            const timeout = 1000; // 1 second timeout
+
+            socket.setTimeout(timeout);
+            
+            socket.on('connect', () => {
+                socket.destroy();
+                resolve(true);
+            });
+
+            socket.on('timeout', () => {
+                socket.destroy();
+                resolve(false);
+            });
+
+            socket.on('error', () => {
+                socket.destroy();
+                resolve(false);
+            });
+
+            socket.connect(port, host);
+        });
     }
 
     /**
