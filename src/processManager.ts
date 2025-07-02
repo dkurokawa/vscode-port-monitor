@@ -2,30 +2,30 @@ import * as vscode from 'vscode';
 import { PortInfo } from './config';
 
 /**
- * プロセス管理機能
- * ポートを使用しているプロセスの停止など
+ * Process management functionality
+ * Manages stopping processes that are using ports
  */
 export class ProcessManager {
     /**
-     * 指定されたポートを使用しているプロセスを停止
-     * @param portInfo ポート情報
-     * @param confirmBeforeKill 停止前に確認するか
-     * @returns 成功したかどうか
+     * Stop the process using the specified port
+     * @param portInfo Port information
+     * @param confirmBeforeKill Whether to confirm before stopping
+     * @returns Whether the operation was successful
      */
     public async killProcess(portInfo: PortInfo, confirmBeforeKill = true): Promise<boolean> {
-        // リモートホストでの実行は不可
+        // Cannot execute on remote hosts
         if (portInfo.host !== 'localhost' && portInfo.host !== '127.0.0.1') {
             vscode.window.showErrorMessage(`Cannot kill process on remote host: ${portInfo.host}`);
             return false;
         }
 
-        // プロセスが動作していない場合
+        // When process is not running
         if (!portInfo.isOpen || !portInfo.pid) {
             vscode.window.showInformationMessage(`No process found on port ${portInfo.port}`);
             return false;
         }
 
-        // 確認ダイアログ
+        // Confirmation dialog
         if (confirmBeforeKill) {
             const processName = portInfo.processName || 'Unknown';
             const confirm = await vscode.window.showWarningMessage(
@@ -62,12 +62,12 @@ export class ProcessManager {
     }
 
     /**
-     * 複数のプロセスを選択して停止
-     * @param portInfos ポート情報の配列
-     * @param confirmBeforeKill 停止前に確認するか
+     * Select and stop multiple processes
+     * @param portInfos Array of port information
+     * @param confirmBeforeKill Whether to confirm before stopping
      */
     public async killMultipleProcesses(portInfos: PortInfo[], confirmBeforeKill = true): Promise<void> {
-        // 動作中のプロセスのみフィルタ
+        // Filter only running processes
         const runningProcesses = portInfos.filter(p => p.isOpen && p.pid);
         
         if (runningProcesses.length === 0) {
@@ -75,7 +75,7 @@ export class ProcessManager {
             return;
         }
 
-        // プロセス選択UI
+        // Process selection UI
         const items = runningProcesses.map(portInfo => ({
             label: `Port ${portInfo.port}`,
             description: `${portInfo.processName || 'Unknown'} (PID: ${portInfo.pid})`,
@@ -91,7 +91,7 @@ export class ProcessManager {
             return;
         }
 
-        // 選択されたプロセスを停止
+        // Stop selected processes
         const results = await Promise.all(
             selected.map(item => this.killProcess(item.portInfo, confirmBeforeKill))
         );
@@ -111,8 +111,8 @@ export class ProcessManager {
     }
 
     /**
-     * プロセス詳細情報を表示
-     * @param portInfo ポート情報
+     * Display detailed process information
+     * @param portInfo Port information
      */
     public async showProcessDetails(portInfo: PortInfo): Promise<void> {
         if (!portInfo.isOpen) {
@@ -133,9 +133,9 @@ export class ProcessManager {
     }
 
     /**
-     * プロセスを実際に終了させる
-     * @param pid プロセスID
-     * @returns 成功したかどうか
+     * Actually terminate the process
+     * @param pid Process ID
+     * @returns Whether the operation was successful
      */
     private async terminateProcess(pid: number): Promise<boolean> {
         try {
@@ -145,10 +145,10 @@ export class ProcessManager {
 
             let command: string;
             if (process.platform === 'win32') {
-                // Windows では taskkill を使用
+                // Use taskkill on Windows
                 command = `taskkill /PID ${pid} /F`;
             } else {
-                // Unix系では kill を使用
+                // Use kill on Unix-like systems
                 command = `kill -TERM ${pid}`;
             }
 
@@ -161,9 +161,9 @@ export class ProcessManager {
     }
 
     /**
-     * プロセスの詳細情報を取得
-     * @param port ポート番号
-     * @returns プロセス詳細情報
+     * Get detailed process information
+     * @param port Port number
+     * @returns Detailed process information
      */
     private async getDetailedProcessInfo(port: number): Promise<any> {
         try {
@@ -186,13 +186,13 @@ export class ProcessManager {
     }
 
     /**
-     * プロセス詳細情報をパース
-     * @param output コマンド出力
-     * @returns パースされた情報
+     * Parse process detailed information
+     * @param output Command output
+     * @returns Parsed information
      */
     private parseProcessDetails(output: string): any {
-        // プラットフォーム別のパース処理
-        // 実装は後で詳細化
+        // Platform-specific parsing process
+        // Implementation will be detailed later
         return {
             command: 'N/A',
             startTime: 'N/A',
@@ -202,10 +202,10 @@ export class ProcessManager {
     }
 
     /**
-     * プロセス詳細情報をフォーマット
-     * @param portInfo ポート情報
-     * @param details 詳細情報
-     * @returns フォーマットされた文字列
+     * Format process detailed information
+     * @param portInfo Port information
+     * @param details Detailed information
+     * @returns Formatted string
      */
     private formatProcessDetails(portInfo: PortInfo, details: any): string {
         const lines = [

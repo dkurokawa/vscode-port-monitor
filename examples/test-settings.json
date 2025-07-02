@@ -18,8 +18,8 @@
     "*": "other"
   },
   "portMonitor.statusIcons": {
-    "open": "🟢",
-    "closed": "🔴"
+    "free": "⚪️",
+    "inUse": "🟢"
   },
   "portMonitor.displayOptions": {
     "separator": "|",

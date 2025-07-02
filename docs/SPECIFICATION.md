@@ -23,21 +23,31 @@ Comparison with existing VS Code extensions:
 
 ### Monitoring Targets
 - Can monitor multiple hosts and multiple ports simultaneously
+- Supports multiple configuration formats that are automatically processed:
+  - **Simple arrays**: `[3000, 3001, "3002-3009"]`
+  - **Grouped configurations**: `{"localhost": {"Development": {3000: "app"}}}`
+  - **Mixed formats**: Arrays with well-known names and ranges
 - Ports can be specified as:
   - Number: `3000`
   - Range: `"3000-3009"`
   - Well-known names: `"http"`, `"https"`, `"ssh"`, `"postgresql"`, etc.
-- Ports can be labeled (named):
-  - Set as `"port_number": "label_name"` in `portLabels`
-  - Displayed as `label:port_suffix` format (e.g., `user:0` for port 3000 with user label)
+- **Automatic Configuration Processing**: 4-step intelligent transformation:
+  1. Well-known ports replacement (`"http"` → `80`)
+  2. Default grouping (simple arrays get `"__NOTITLE"` wrapper)
+  3. Range expansion (`"3002-3009"` → individual ports)
+  4. Array to object conversion (`[3000, 3001]` → `{3000: "", 3001: ""}`)
+- Port labeling:
+  - Direct assignment in grouped format: `{3000: "app", 3001: "api"}`
+  - Pattern-based via `portLabels`: `{"300*": "dev-env"}`
+  - Displayed as `label:port_suffix` format
 
 ### Display Format
 - Displayed in status bar in the following format:
   ```
-  localhost: 300[🟢user:0|🔴car:1|🔴2|🔴3|🟢4]
-  db-server.local: [🔴postgresql:5432]
+  localhost: 300[🟢user:0|⚪️car:1|⚪️2|⚪️3|🟢4]
+  db-server.local: [⚪️postgresql:5432]
   ```
-- Port suffix/full number display format and icons (🟢🔴) are customizable
+- Port suffix/full number display format and icons (🟢⚪️) are customizable
 - When a port has a label, displayed as "label:port_suffix" format
 - Non-range ports also display full port numbers
 - Port separator character (default: `|`) is customizable
@@ -58,12 +68,17 @@ Comparison with existing VS Code extensions:
 ```json
 {
   "portMonitor.hosts": {
-    "localhost": ["http", 3000, "3001-3003", "https"],
-    "db-server.local": ["postgresql"]
+    "localhost": {
+      "Web Services": ["http", "https"],
+      "Development": [3000, "3001-3003"]
+    },
+    "db-server.local": {
+      "Database": ["postgresql"]
+    }
   },
   "portMonitor.statusIcons": {
-    "open": "🟢",
-    "closed": "🔴"
+    "inUse": "🟢",
+    "free": "⚪️"
   },
   "portMonitor.intervalMs": 3000,
   "portMonitor.portLabels": {
@@ -83,11 +98,21 @@ Comparison with existing VS Code extensions:
 }
 ```
 
+### Alternative Simple Configuration
+```json
+{
+  "portMonitor.hosts": {
+    "Development": [3000, 3001, "3002-3009"],
+    "Services": ["http", "https", "ssh"]
+  }
+}
+```
+
 ### Configuration Details
 | Setting | Type | Description | Default |
 |---------|------|-------------|---------|
 | `portMonitor.hosts` | Object | Monitored hosts and ports | `{}` |
-| `portMonitor.statusIcons` | Object | Status icon configuration | `{"open": "🟢", "closed": "🔴"}` |
+| `portMonitor.statusIcons` | Object | Status icon configuration | `{"inUse": "🟢", "free": "⚪️"}` |
 | `portMonitor.intervalMs` | Number | Monitoring interval (milliseconds) | `3000` |
 | `portMonitor.portLabels` | Object | Port label configuration (pattern matching support) | `{}` |
 | `portMonitor.enableProcessKill` | Boolean | Enable process kill feature | `true` |
@@ -146,7 +171,22 @@ The following patterns are available in `portMonitor.portLabels`:
 ```json
 {
   "portMonitor.hosts": {
-    "localhost": [3000, 3001, "3002-3004"]
+    "localhost": {
+      "Applications": {
+        3000: "user",
+        3001: "car",
+        "3002-3004": "services"
+      }
+    }
+  }
+}
+```
+
+### Simple Array Format Example
+```json
+{
+  "portMonitor.hosts": {
+    "Development": [3000, 3001, "3002-3004"]
   },
   "portMonitor.portLabels": {
     "3000": "user",
@@ -171,9 +211,9 @@ The following patterns are available in `portMonitor.portLabels`:
 ```
 
 **Display Examples**:
-- Default: `localhost: 300[🟢user:0|🔴car:1|🔴2]`
-- Custom: `localhost: [🟢user:3000 • 🔴car:3001 • 🔴3002]`
-- Single port: `db-server: [🔴postgresql:5432]`
+- Default: `localhost: 300[🟢user:0|⚪️car:1|⚪️2]`
+- Custom: `localhost: [🟢user:3000 • ⚪️car:3001 • ⚪️3002]`
+- Single port: `db-server: [⚪️postgresql:5432]`
 
 ### Pattern Matching Example
 ```json
@@ -229,10 +269,10 @@ The following patterns are available in `portMonitor.portLabels`:
 
 ### Display Example
 With this configuration, the display will be:
-- Port 3000 open: `🟢user:0`
-- Port 3001 closed: `🔴car:1`  
-- Port 3002 without label: `🔴2`
-- Result: `localhost: 300[🟢user:0 🔴car:1 🔴2 🔴3 🟢4]`
+- Port 3000 in use: `🟢user:0`
+- Port 3001 free: `⚪️car:1`  
+- Port 3002 without label: `⚪️2`
+- Result: `localhost: 300[🟢user:0 ⚪️car:1 ⚪️2 ⚪️3 🟢4]`
 
 ## 🏗️ Architecture
 

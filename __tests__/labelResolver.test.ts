@@ -1,6 +1,6 @@
 /**
- * 🧪 LabelResolver テストケース
- * 表示パターンの期待動作を明確化
+ * 🧪 LabelResolver Test Cases
+ * Clarify expected behavior of display patterns
  */
 
 // Mock VS Code modules
@@ -17,9 +17,9 @@ jest.mock('../src/portRange', () => ({ PortRange: mockPortRange }));
 
 import { LabelResolver } from '../src/labelResolver';
 
-describe('🚀 LabelResolver 表示ロジック', () => {
+describe('🚀 LabelResolver Display Logic', () => {
     let resolver: LabelResolver;
-    const icons = { open: '🟢', closed: '🔴' };
+    const icons = { inUse: '🟢', free: '🔴' };
     const options = { separator: '|', showFullPortNumber: false, compactRanges: true };
 
     beforeEach(() => {
@@ -45,7 +45,7 @@ describe('🚀 LabelResolver 表示ロジック', () => {
         });
     });
 
-    describe('📊 共通プレフィックス', () => {
+    describe('📊 Common Prefix', () => {
         test('✅ [3000,3001,3007,3008,3009] → 300[0|1|7|8|9]', () => {
             const ports = [
                 { port: 3000, isOpen: true },
@@ -59,7 +59,7 @@ describe('🚀 LabelResolver 表示ロジック', () => {
             expect(result).toBe('localhost:300[🟢main:0|🟢dev:1|🔴:7|🔴:8|🔴:9]');
         });
 
-        test('⚠️ [3000,3001,3100] → 1文字共通は無効（通常表示）', () => {
+        test('⚠️ [3000,3001,3100] → 1-char common is invalid (normal display)', () => {
             const ports = [
                 { port: 3000, isOpen: true },
                 { port: 3001, isOpen: true },
@@ -67,7 +67,7 @@ describe('🚀 LabelResolver 表示ロジック', () => {
             ];
 
             const result = resolver.generateHostDisplay('localhost', ports, icons, options);
-            // 1文字共通は無効なので通常表示
+            // 1-char common is invalid so normal display
             expect(result).toBe('localhost:[🟢main|🟢dev|🔴3100]');
         });
 
@@ -82,7 +82,7 @@ describe('🚀 LabelResolver 表示ロジック', () => {
             expect(result).toBe('localhost:30[🟢main:00|🟢:10|🔴:20]');
         });
 
-        test('❌ [3000,4000,8080] → 通常表示', () => {
+        test('❌ [3000,4000,8080] → normal display', () => {
             const ports = [
                 { port: 3000, isOpen: true },
                 { port: 4000, isOpen: false },
@@ -94,11 +94,11 @@ describe('🚀 LabelResolver 表示ロジック', () => {
         });
     });
 
-    describe('🏷️ ラベル表示', () => {
-        test('✅ ラベル混在', () => {
+    describe('🏷️ Label Display', () => {
+        test('✅ Mixed Labels', () => {
             const ports = [
                 { port: 3000, isOpen: true },   // main
-                { port: 3002, isOpen: false }   // ラベルなし
+                { port: 3002, isOpen: false }   // no label
             ];
 
             const result = resolver.generateHostDisplay('localhost', ports, icons, options);
@@ -116,8 +116,8 @@ describe('🚀 LabelResolver 表示ロジック', () => {
         });
     });
 
-    describe('📁 カテゴリ表示', () => {
-        test('🏗️ カテゴリグループ', () => {
+    describe('📁 Category Display', () => {
+        test('🏗️ Category Group', () => {
             const ports = [
                 { port: 3000, isOpen: true, category: 'Next.js' },
                 { port: 80, isOpen: true, category: 'Web' }
@@ -127,7 +127,7 @@ describe('🚀 LabelResolver 表示ロジック', () => {
             expect(result).toBe('localhost[Next.js:[🟢main] Web:[🟢http:80]]');
         });
 
-        test('📦 カテゴリ内共通部', () => {
+        test('📦 Common prefix within category', () => {
             const ports = [
                 { port: 3000, isOpen: true, category: 'Next.js' },
                 { port: 3001, isOpen: true, category: 'Next.js' },
@@ -139,7 +139,7 @@ describe('🚀 LabelResolver 表示ロジック', () => {
         });
     });
 
-    describe('⚙️ オプション', () => {
+    describe('⚙️ Options', () => {
         test('🔢 showFullPortNumber=true', () => {
             const fullOptions = { ...options, showFullPortNumber: true };
             const ports = [{ port: 3000, isOpen: true }];
@@ -160,8 +160,8 @@ describe('🚀 LabelResolver 表示ロジック', () => {
         });
     });
 
-    describe('🚀 実用例', () => {
-        test('⚛️ Next.js環境', () => {
+    describe('🚀 Practical Examples', () => {
+        test('⚛️ Next.js Environment', () => {
             const ports = [
                 { port: 3000, isOpen: true, category: 'Next.js', label: 'main' },
                 { port: 3001, isOpen: true, category: 'Next.js', label: 'dev' },

@@ -9,14 +9,21 @@ export class PortMonitorExtension {
     private currentMonitorId?: string;
     private disposables: vscode.Disposable[] = [];
 
-    constructor(private context: vscode.ExtensionContext) {
-        this.monitor = new PortMonitor();
-        this.configManager = ConfigManager.getInstance();
-        this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 200);
-        this.statusBarItem.command = 'portMonitor.refresh';
-        this.statusBarItem.show();
-        
-        this.initialize();
+    constructor(private _context: vscode.ExtensionContext) {
+        try {
+            console.log('Initializing PortMonitorExtension...');
+            this.monitor = new PortMonitor();
+            this.configManager = ConfigManager.getInstance();
+            this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 200);
+            this.statusBarItem.command = 'portMonitor.refresh';
+            this.statusBarItem.show();
+            
+            this.initialize();
+            console.log('PortMonitorExtension initialized successfully');
+        } catch (error) {
+            console.error('Error initializing PortMonitorExtension:', error);
+            throw error;
+        }
     }
 
     private initialize(): void {
@@ -36,13 +43,20 @@ export class PortMonitorExtension {
     }
 
     private registerCommands(): void {
-        const commands = [
-            vscode.commands.registerCommand('portMonitor.refresh', () => this.refreshPortStatus()),
-            vscode.commands.registerCommand('portMonitor.showLog', (portInfo?: PortInfo) => this.showProcessLog(portInfo)),
-            vscode.commands.registerCommand('portMonitor.openSettings', () => this.openSettings())
-        ];
+        try {
+            console.log('Registering commands...');
+            const commands = [
+                vscode.commands.registerCommand('portMonitor.refresh', () => this.refreshPortStatus()),
+                vscode.commands.registerCommand('portMonitor.showLog', (portInfo?: PortInfo) => this.showProcessLog(portInfo)),
+                vscode.commands.registerCommand('portMonitor.openSettings', () => this.openSettings())
+            ];
 
-        this.disposables.push(...commands);
+            this.disposables.push(...commands);
+            console.log('Commands registered successfully');
+        } catch (error) {
+            console.error('Failed to register commands:', error);
+            throw error;
+        }
     }
 
     private async onConfigurationChanged(): Promise<void> {
@@ -50,7 +64,7 @@ export class PortMonitorExtension {
         const config = this.configManager.getConfig();
 
         // Validate configuration
-        const errors = this.configManager.validateConfig(config);
+        const errors = ConfigManager.validateConfig(config);
         if (errors.length > 0) {
             vscode.window.showErrorMessage(`Port Monitor configuration error: ${errors.join(', ')}`);
             return;
@@ -61,8 +75,8 @@ export class PortMonitorExtension {
             this.monitor.stopMonitoring(this.currentMonitorId);
         }
 
-        // Parse configuration
-        const hostConfigs = ConfigManager.parseHostsConfig(config.hosts);
+        // Parse configuration (mode support)
+        const hostConfigs = ConfigManager.parseHostsConfig(config);
 
         if (hostConfigs.length === 0) {
             this.statusBarItem.text = "Port Monitor: No ports configured";
@@ -79,7 +93,7 @@ export class PortMonitorExtension {
     }
 
     private onPortStatusChanged(results: PortInfo[], config: PortMonitorConfig): void {
-        // Group by host
+        // Group by host and then by config groups for better organization
         const hostGroups = results.reduce((acc, port) => {
             if (!acc[port.host]) {
                 acc[port.host] = [];
@@ -88,11 +102,12 @@ export class PortMonitorExtension {
             return acc;
         }, {} as Record<string, PortInfo[]>);
 
-        // Generate display text
+        // Generate display text using group information from config
         const hostDisplays: string[] = [];
+
         for (const [host, ports] of Object.entries(hostGroups)) {
             const portDisplays = ports.map(port => {
-                const icon = port.isOpen ? config.statusIcons.open : config.statusIcons.closed;
+                const icon = port.isOpen ? config.statusIcons.inUse : config.statusIcons.free;
                 return `${icon}${port.label}:${port.port}`;
             });
             
@@ -104,13 +119,39 @@ export class PortMonitorExtension {
         }
 
         const displayText = hostDisplays.join(' ');
+        console.log('[PortMonitor] StatusBar displayText:', displayText);
         this.statusBarItem.text = displayText;
         this.statusBarItem.tooltip = this.generateTooltip(results);
+
+        // Background color setting - simplified since mode is no longer used
+        if (config.backgroundColor) {
+            this.statusBarItem.backgroundColor = new vscode.ThemeColor(config.backgroundColor);
+        } else if (config.portColors) {
+            // Color of first inUse port, otherwise free port color, otherwise undefined
+            let color: string | undefined;
+            for (const port of results) {
+                if (port.isOpen && config.portColors[port.port.toString()]) {
+                    color = config.portColors[port.port.toString()];
+                    break;
+                }
+            }
+            if (!color) {
+                for (const port of results) {
+                    if (!port.isOpen && config.portColors[port.port.toString()]) {
+                        color = config.portColors[port.port.toString()];
+                        break;
+                    }
+                }
+            }
+            this.statusBarItem.backgroundColor = color ? new vscode.ThemeColor(color) : undefined;
+        } else {
+            this.statusBarItem.backgroundColor = undefined;
+        }
     }
 
     private generateTooltip(results: PortInfo[]): string {
         const lines = results.map(port => {
-            const status = port.isOpen ? 'OPEN' : 'CLOSED';
+            const status = port.isOpen ? 'IN USE' : 'FREE';
             let line = `${port.host}:${port.port} (${port.label}) - ${status}`;
             if (port.isOpen && port.processName) {
                 line += ` - ${port.processName}`;
@@ -137,7 +178,7 @@ export class PortMonitorExtension {
         }
 
         if (!portInfo.isOpen) {
-            vscode.window.showInformationMessage('Port is not open');
+            vscode.window.showInformationMessage('Port is not in use');
             return;
         }
 
@@ -171,8 +212,16 @@ export class PortMonitorExtension {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-    const extension = new PortMonitorExtension(context);
-    context.subscriptions.push(extension);
+    console.log('PortMonitor extension activating...');
+    
+    try {
+        const extension = new PortMonitorExtension(context);
+        context.subscriptions.push(extension);
+        console.log('PortMonitor extension activated successfully');
+    } catch (error) {
+        console.error('Failed to activate PortMonitor extension:', error);
+        vscode.window.showErrorMessage(`Port Monitor activation failed: ${error}`);
+    }
 }
 
 export function deactivate() {

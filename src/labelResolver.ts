@@ -127,22 +127,22 @@ export class LabelResolver {
     }
 
     /**
-     * ホスト別のポート表示を生成（ポート名・番号ペア対応）
-     * @param host ホスト名
-     * @param portInfos ポート情報配列
-     * @param statusIcons ステータスアイコン設定
-     * @param displayOptions 表示オプション
-     * @returns 表示文字列
+     * Generate host-specific port display (port name/number pair support)
+     * @param host Host name
+     * @param portInfos Port information array
+     * @param statusIcons Status icon settings
+     * @param displayOptions Display options
+     * @returns Display string
      */
     public generateHostDisplay(
         host: string, 
         portInfos: { port: number; isOpen: boolean; category?: string; label?: string }[], 
-        statusIcons: { open: string, closed: string },
-        displayOptions: { separator: string; showFullPortNumber: boolean; compactRanges: boolean }
+        statusIcons: { inUse: string, free: string },
+        displayOptions: { separator: string; showFullPortNumber: boolean; compactRanges?: boolean; }
     ): string {
         if (portInfos.length === 0) return '';
 
-        // ポート名・番号ペアを作成
+        // Create port name/number pairs
         const portPairs = portInfos.map(portInfo => ({
             port: portInfo.port,
             isOpen: portInfo.isOpen,
@@ -151,61 +151,72 @@ export class LabelResolver {
             label: portInfo.label
         }));
 
-        // ポート番号でソート
+        // Sort by port number
         portPairs.sort((a, b) => a.port - b.port);
 
-        // カテゴリ別にグループ化（カテゴリがある場合）
+        // Group by category (if categories exist)
         if (portInfos.some(p => p.category)) {
-            return this.generateCategoryGroupedDisplay(host, portInfos, statusIcons, displayOptions);
+            // generateCategoryGroupedDisplay requires compactRanges
+            return this.generateCategoryGroupedDisplay(host, portInfos, statusIcons, {
+                separator: displayOptions.separator,
+                showFullPortNumber: displayOptions.showFullPortNumber,
+                compactRanges: displayOptions.compactRanges ?? false
+            });
         }
 
-        // 共通プレフィックスを検出
+        // Detect common prefix
         const commonPrefix = this.getCommonPortPrefixForAll(portPairs);
-        
-        if (commonPrefix && commonPrefix.length >= 2 && displayOptions.compactRanges) {
-            return this.generateCompactHostDisplay(host, portPairs, commonPrefix, statusIcons, displayOptions);
+        if (commonPrefix && commonPrefix.length >= 2 && (displayOptions.compactRanges ?? false)) {
+            // generateCompactHostDisplay doesn't need compactRanges
+            return this.generateCompactHostDisplay(host, portPairs, commonPrefix, statusIcons, {
+                separator: displayOptions.separator
+            });
         } else {
-            return this.generateSimpleHostDisplay(host, portPairs, statusIcons, displayOptions);
+            // generateSimpleHostDisplay doesn't need compactRanges
+            return this.generateSimpleHostDisplay(host, portPairs, statusIcons, {
+                separator: displayOptions.separator,
+                showFullPortNumber: displayOptions.showFullPortNumber
+            });
         }
     }
 
     /**
-     * ポートの表示名を取得（ラベル優先、なければwell-known名）
+     * Get port display name (label priority, otherwise well-known name)
      */
     private getPortDisplayName(portInfo: { port: number; label?: string; category?: string }): string {
-        // 明示的なラベルが設定されている場合
+        // If explicit label is configured
         if (portInfo.label) {
             return portInfo.label;
         }
 
-        // パターンマッチングでラベルを解決
+        // Resolve label through pattern matching
         const resolvedLabel = this.resolveLabel(portInfo.port);
         if (resolvedLabel) {
             return resolvedLabel;
         }
 
-        // well-known名をチェック
+        // Check well-known names
         const wellKnownName = PortRange.getPortName(portInfo.port);
         if (wellKnownName) {
             return wellKnownName;
         }
 
-        // デフォルトは空文字（番号のみ表示）
+        // Default is empty string (number-only display)
         return '';
     }
 
     /**
-     * コンパクト表示生成（共通プレフィックス使用）
+     * Generate compact display (using common prefix)
      */
     private generateCompactHostDisplay(
         host: string,
         portPairs: { port: number; isOpen: boolean; displayName: string }[],
         commonPrefix: string,
-        statusIcons: { open: string, closed: string },
+        statusIcons: { inUse: string, free: string },
         displayOptions: { separator: string }
     ): string {
         const portDisplays = portPairs.map(pair => {
-            const icon = pair.isOpen ? statusIcons.open : statusIcons.closed;
+            const icon = pair.isOpen ? statusIcons.inUse : statusIcons.free;
             const suffix = pair.port.toString().slice(commonPrefix.length);
             
             if (pair.displayName) {
@@ -219,19 +230,19 @@ export class LabelResolver {
     }
 
     /**
-     * シンプル表示生成（プレフィックスなし）
+     * Generate simple display (without prefix)
      */
     private generateSimpleHostDisplay(
         host: string,
         portPairs: { port: number; isOpen: boolean; displayName: string }[],
-        statusIcons: { open: string, closed: string },
+        statusIcons: { inUse: string, free: string },
         displayOptions: { separator: string; showFullPortNumber: boolean }
     ): string {
         const portDisplays = portPairs.map(pair => {
-            const icon = pair.isOpen ? statusIcons.open : statusIcons.closed;
+            const icon = pair.isOpen ? statusIcons.inUse : statusIcons.free;
             
             if (pair.displayName) {
-                // well-known名は常にポート番号付きで表示
+                // well-known names are always displayed with port number
                 const wellKnownName = PortRange.getPortName(pair.port);
                 if (wellKnownName) {
                     return `${icon}${pair.displayName}:${pair.port}`;
@@ -250,15 +261,15 @@ export class LabelResolver {
     }
 
     /**
-     * カテゴリ別グループ表示生成
+     * Generate category group display
      */
     private generateCategoryGroupedDisplay(
         host: string, 
         portInfos: { port: number; isOpen: boolean; category?: string; label?: string }[], 
-        statusIcons: { open: string, closed: string },
+        statusIcons: { inUse: string, free: string },
         displayOptions: { separator: string; showFullPortNumber: boolean; compactRanges: boolean }
     ): string {
-        // カテゴリ別にグループ化
+        // Group by category
         const categoryGroups = this.groupPortsByCategory(portInfos);
         
         const categoryDisplays: string[] = [];
@@ -277,13 +288,13 @@ export class LabelResolver {
     }
 
     /**
-     * ポートをカテゴリ別にグループ化
+     * Group ports by category
      */
     private groupPortsByCategory(portInfos: { port: number; isOpen: boolean; category?: string; label?: string }[]): Map<string, { port: number; isOpen: boolean; label?: string }[]> {
         const groups = new Map<string, { port: number; isOpen: boolean; label?: string }[]>();
         
         for (const portInfo of portInfos) {
-            // カテゴリまたはラベルを決定
+            // Determine category or label
             const groupKey = portInfo.category || this.resolveLabel(portInfo.port) || 'Other';
             
             if (!groups.has(groupKey)) {
@@ -300,33 +311,33 @@ export class LabelResolver {
     }
 
     /**
-     * カテゴリ内のポート表示を生成（ラベルと番号の混在対応）
+     * Generate port display within category (label and number mix support)
      */
     private generateCategoryDisplay(
         category: string, 
         ports: { port: number; isOpen: boolean; label?: string }[], 
-        statusIcons: { open: string, closed: string },
+        statusIcons: { inUse: string, free: string },
         displayOptions: { separator: string; showFullPortNumber: boolean; compactRanges: boolean }
     ): string {
         if (ports.length === 0) return '';
 
-        // ポート番号でソート
+        // Sort by port number
         ports.sort((a, b) => a.port - b.port);
 
-        // ポート名・番号ペアを作成
+        // Create port name/number pairs
         const portPairs = ports.map(port => ({
             port: port.port,
             isOpen: port.isOpen,
             displayName: this.getPortDisplayName(port)
         }));
 
-        // 共通プレフィックスを検出
+        // Detect common prefix
         const commonPrefix = this.getCommonPortPrefixForAll(portPairs);
         
         if (commonPrefix && commonPrefix.length >= 2 && displayOptions.compactRanges) {
-            // 共通部がある場合の表示
+            // Display when common part exists
             const portDisplays = portPairs.map(pair => {
-                const icon = pair.isOpen ? statusIcons.open : statusIcons.closed;
+            const icon = pair.isOpen ? statusIcons.inUse : statusIcons.free;
                 const suffix = pair.port.toString().slice(commonPrefix.length);
                 
                 if (pair.displayName) {
@@ -338,25 +349,25 @@ export class LabelResolver {
             
             return `${category}:${commonPrefix}[${portDisplays.join(displayOptions.separator)}]`;
         } else {
-            // 通常表示
+            // Normal display
             const portDisplays = portPairs.map(pair => {
-                const icon = pair.isOpen ? statusIcons.open : statusIcons.closed;
+                const icon = pair.isOpen ? statusIcons.inUse : statusIcons.free;
                 
                 if (pair.displayName) {
-                    // well-known名は常にポート番号付きで表示
+                    // well-known names are always displayed with port number
                     const wellKnownName = PortRange.getPortName(pair.port);
                     if (wellKnownName) {
                         return `${icon}${pair.displayName}:${pair.port}`;
                     }
                     
-                    // ラベルがある場合
+                    // If label exists
                     if (displayOptions.showFullPortNumber) {
                         return `${icon}${pair.displayName}:${pair.port}`;
                     } else {
                         return `${icon}${pair.displayName}`;
                     }
                 } else {
-                    // ラベルがない場合（番号のみ）
+                    // If no label (number only)
                     return `${icon}${pair.port}`;
                 }
             });
@@ -366,9 +377,9 @@ export class LabelResolver {
     }
 
     /**
-     * 全ポートの共通プレフィックスを検出（ポート名・番号ペア対応）
-     * @param portPairs ポート名・番号ペア配列
-     * @returns 共通プレフィックス（2文字以上の場合のみ）
+     * Detect common prefix for all ports (port name/number pair support)
+     * @param portPairs Port name/number pair array
+     * @returns Common prefix (only if 2 or more characters)
      */
     private getCommonPortPrefixForAll(portPairs: { port: number; displayName: string }[]): string | null {
         if (portPairs.length <= 1) return null;
@@ -376,7 +387,7 @@ export class LabelResolver {
         const portStrings = portPairs.map(pair => pair.port.toString());
         let commonPrefix = portStrings[0];
 
-        // 最長共通プレフィックスを見つける
+        // Find longest common prefix
         for (let i = 1; i < portStrings.length; i++) {
             const current = portStrings[i];
             let j = 0;
@@ -386,12 +397,12 @@ export class LabelResolver {
             commonPrefix = commonPrefix.substring(0, j);
             
             if (commonPrefix.length < 2) {
-                return null; // 共通部が2未満の場合は意味がない
+                return null; // Common part less than 2 is meaningless
             }
         }
 
-        // 可能な限り長い共通プレフィックスを取得
-        // 例: [3000, 3001, 3007, 3008, 3009] → "300" (最大共通部分)
+        // Get the longest possible common prefix
+        // Example: [3000, 3001, 3007, 3008, 3009] → "300" (maximum common part)
         return commonPrefix.length >= 2 ? commonPrefix : null;
     }
 }

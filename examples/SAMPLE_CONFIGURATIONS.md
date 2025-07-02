@@ -1,8 +1,10 @@
 # Port Monitor - Sample Configurations
 
-開発環境別のポート監視設定例を豊富に紹介します。
+Comprehensive examples of port monitoring configurations for different development environments. 
 
-## 📋 開発環境別ポート使用パターン
+**Note**: All configurations use the new intelligent processing system that automatically handles well-known port names, port ranges, and different configuration formats.
+
+## 📋 Port Usage Patterns by Development Environment
 
 ### Frontend Frameworks
 - **Next.js**: 3000-3009 (dev server, multiple instances)
@@ -59,20 +61,25 @@
 
 ## 🔧 Sample Configuration Files
 
+**Configuration Features:**
+- **Well-known port names**: Use `"http"`, `"https"`, `"ssh"`, `"postgresql"`, etc. automatically converted to port numbers
+- **Port ranges**: `"3000-3009"` automatically expands to individual ports 3000, 3001, 3002... 3009
+- **Multiple formats**: Simple arrays, grouped configurations, and mixed formats all supported
+- **Smart processing**: All configurations are automatically normalized for consistent behavior
+
 ### 1. Next.js Development (Multiple Instances)
 ```json
 {
   "portMonitor.hosts": {
-    "Next.js Development": {
-      "localhost": [3000, 3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009]
+    "localhost": {
+      "Next.js": {
+        3000: "Main App",
+        3001: "Admin Panel",
+        3002: "Storybook",
+        3003: "API Docs",
+        "3004-3009": "Feature Branches"
+      }
     }
-  },
-  "portMonitor.portLabels": {
-    "3000": "Main App",
-    "3001": "Admin Panel",
-    "3002": "Storybook",
-    "3003": "API Docs",
-    "3004-3009": "Feature Branches"
   },
   "portMonitor.displayOptions": {
     "separator": " | ",
@@ -83,29 +90,42 @@
 }
 ```
 
+### 1b. Next.js Development (Simple Array Format)
+```json
+{
+  "portMonitor.hosts": {
+    "Next.js Development": ["3000-3009"]
+  },
+  "portMonitor.portLabels": {
+    "3000": "Main App",
+    "3001": "Admin Panel",
+    "3002": "Storybook",
+    "3003": "API Docs",
+    "300*": "Feature Branches"
+  }
+}
+```
+
 ### 2. Full-Stack MERN Development
 ```json
 {
   "portMonitor.hosts": {
-    "Frontend": {
-      "localhost": [3000, 3001, 6006]
-    },
-    "Backend": {
-      "localhost": [5000, 5001, 4000]
-    },
-    "Database": {
-      "localhost": [27017, 6379]
+    "localhost": {
+      "Frontend": {
+        3000: "React App",
+        3001: "Admin Dashboard",
+        6006: "Storybook"
+      },
+      "Backend": {
+        5000: "Express API",
+        5001: "Auth Service",
+        4000: "GraphQL"
+      },
+      "Database": {
+        27017: "MongoDB",
+        6379: "Redis"
+      }
     }
-  },
-  "portMonitor.portLabels": {
-    "3000": "React App",
-    "3001": "React (Dev)",
-    "6006": "Storybook",
-    "5000": "Express API",
-    "5001": "Express (Test)",
-    "4000": "GraphQL",
-    "27017": "MongoDB",
-    "6379": "Redis"
   }
 }
 ```
@@ -114,17 +134,11 @@
 ```json
 {
   "portMonitor.hosts": {
-    "API Gateway": {
-      "localhost": [8080, 8000]
-    },
-    "Core Services": {
-      "localhost": [3001, 3002, 3003, 3004, 3005]
-    },
-    "Databases": {
-      "localhost": [5432, 3306, 27017, 6379]
-    },
-    "DevTools": {
-      "localhost": [6006, 4000, 9200]
+    "localhost": {
+      "API Gateway": [8080, 8000],
+      "Core Services": ["3001-3005"],
+      "Databases": ["postgresql", "mysql", "mongodb", "redis"],
+      "DevTools": [6006, 4000, 9200]
     }
   },
   "portMonitor.portLabels": {
@@ -135,10 +149,6 @@
     "3003": "Product Service",
     "3004": "Payment Service",
     "3005": "Notification Service",
-    "5432": "PostgreSQL",
-    "3306": "MySQL",
-    "27017": "MongoDB",
-    "6379": "Redis",
     "6006": "Storybook",
     "4000": "GraphQL Playground",
     "9200": "Elasticsearch"
@@ -358,19 +368,19 @@
 ## 💡 Configuration Tips
 
 ### Display Optimization
-- **compactRanges**: 連続するポートを省略表示 (3000-3009 → 3000-9)
-- **showFullPortNumber**: 完全なポート番号を表示 (false推奨)
-- **maxDisplayLength**: ステータスバーの文字数制限
-- **separator**: ポート間の区切り文字をカスタマイズ
+- **compactRanges**: Display consecutive ports in shortened form (3000-3009 → 3000-9)
+- **showFullPortNumber**: Display full port numbers (false recommended)
+- **maxDisplayLength**: Character limit for status bar display
+- **separator**: Customize delimiter between ports
 
 ### Label Patterns
-- **範囲ラベル**: "3000-3009": "Next.js Apps"
-- **個別ラベル**: "3000": "Main App", "3001": "Admin"
-- **プロセス名**: "5432": "PostgreSQL", "27017": "MongoDB"
-- **環境別**: "3000": "Dev", "3001": "Staging"
+- **Range Labels**: "3000-3009": "Next.js Apps"
+- **Individual Labels**: "3000": "Main App", "3001": "Admin"
+- **Process Names**: "5432": "PostgreSQL", "27017": "MongoDB"
+- **Environment-based**: "3000": "Dev", "3001": "Staging"
 
 ### Host Organization
-- **機能別**: Frontend, Backend, Database
-- **サービス別**: Auth, User, Payment
-- **環境別**: Development, Staging, Production
-- **プロジェクト別**: ProjectA, ProjectB, ProjectC
+- **By Function**: Frontend, Backend, Database
+- **By Service**: Auth, User, Payment
+- **By Environment**: Development, Staging, Production
+- **By Project**: ProjectA, ProjectB, ProjectC

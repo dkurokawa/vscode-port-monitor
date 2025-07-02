@@ -2,7 +2,7 @@
   "name": "vscode-port-monitor",
   "displayName": "Port Monitor",
   "description": "Monitor multiple hosts and ports with real-time status display in VS Code status bar",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "publisher": "dkurokawa",
   "license": "MIT",
   "repository": {
@@ -36,28 +36,36 @@
       "properties": {
         "portMonitor.hosts": {
           "type": "object",
-          "default": {
-            "localhost": {
-              "admin": 3000,
-              "app": 3001,
-              "user": 3002
-            }
-          },
-          "description": "Hosts and labeled ports to monitor. Format: {\"host\": {\"label\": port}}"
+          "default": {},
+          "description": "Hosts and ports to monitor. Supports multiple formats: simple arrays, grouped configurations, well-known port names, and port ranges."
         },
         "portMonitor.statusIcons": {
           "type": "object",
           "default": {
-            "open": "🟢",
-            "closed": "🔴"
+            "free": "⚪️",
+            "inUse": "🟢"
           },
-          "description": "Status icons for open/closed ports"
+          "description": "Status icons for free/inUse ports"
+        },
+        "portMonitor.portLabels": {
+          "type": "object",
+          "default": {},
+          "description": "Port labels for pattern matching. Example: {'3000': 'frontend', '300*': 'dev-env'}"
         },
         "portMonitor.intervalMs": {
           "type": "number",
           "default": 3000,
           "minimum": 1000,
           "description": "Monitoring interval in milliseconds"
+        },
+        "portMonitor.backgroundColor": {
+          "type": "string",
+          "description": "Status bar background color (VS Code theme color name or hex code)"
+        },
+        "portMonitor.portColors": {
+          "type": "object",
+          "default": {},
+          "description": "Background colors for specific ports. Example: {'3000': '#ffcccc', '8080': 'statusBarItem.errorBackground'}"
         }
       }
     },

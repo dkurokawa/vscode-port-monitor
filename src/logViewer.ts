@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 import { PortInfo } from './config';
 
 /**
- * プロセスログ表示機能
- * プロセスのstdout/stderrをリアルタイムで表示
+ * Process log display functionality
+ * Display process stdout/stderr in real-time
  */
 export class LogViewer {
     private logPanels: Map<string, vscode.WebviewPanel> = new Map();
@@ -12,21 +12,21 @@ export class LogViewer {
     constructor(private context: vscode.ExtensionContext) {}
 
     /**
-     * プロセスのログを表示
-     * @param portInfo ポート情報
-     * @param config ログ設定
+     * Display process logs
+     * @param portInfo Port information
+     * @param config Log configuration
      */
     public async showProcessLog(
         portInfo: PortInfo, 
         config: { logBufferSize: number, autoScrollLog: boolean }
     ): Promise<void> {
-        // リモートホストは対応しない
+        // Remote hosts are not supported
         if (portInfo.host !== 'localhost' && portInfo.host !== '127.0.0.1') {
             vscode.window.showErrorMessage(`Cannot view logs for remote host: ${portInfo.host}`);
             return;
         }
 
-        // プロセスが動作していない場合
+        // When process is not running
         if (!portInfo.isOpen || !portInfo.pid) {
             vscode.window.showInformationMessage(`No process found on port ${portInfo.port}`);
             return;
@@ -34,14 +34,14 @@ export class LogViewer {
 
         const panelKey = `${portInfo.host}:${portInfo.port}`;
         
-        // 既存のパネルがある場合は前面に表示
+        // If existing panel exists, bring it to front
         const existingPanel = this.logPanels.get(panelKey);
         if (existingPanel) {
             existingPanel.reveal();
             return;
         }
 
-        // 新しいWebviewパネルを作成
+        // Create new Webview panel
         const panel = vscode.window.createWebviewPanel(
             'portMonitorLog',
             `Log: ${portInfo.processName || 'Process'} (Port ${portInfo.port})`,
@@ -52,28 +52,28 @@ export class LogViewer {
             }
         );
 
-        // パネルを記録
+        // Record the panel
         this.logPanels.set(panelKey, panel);
 
-        // パネルが閉じられた時の処理
+        // Handler for when panel is closed
         panel.onDidDispose(() => {
             this.stopLogCapture(panelKey);
             this.logPanels.delete(panelKey);
         });
 
-        // HTML コンテンツを設定
+        // Set HTML content
         panel.webview.html = this.getLogViewerHtml(portInfo, config);
 
-        // ログキャプチャを開始
+        // Start log capture
         await this.startLogCapture(panelKey, portInfo, panel, config);
     }
 
     /**
-     * ログキャプチャを開始
-     * @param panelKey パネルキー
-     * @param portInfo ポート情報
-     * @param panel Webviewパネル
-     * @param config ログ設定
+     * Start log capture
+     * @param panelKey Panel key
+     * @param portInfo Port information
+     * @param panel Webview panel
+     * @param config Log configuration
      */
     private async startLogCapture(
         panelKey: string, 
@@ -82,27 +82,27 @@ export class LogViewer {
         config: { logBufferSize: number, autoScrollLog: boolean }
     ): Promise<void> {
         try {
-            // プロセスの出力をキャプチャ
+            // Capture process output
             const logProcess = await this.attachToProcess(portInfo.pid!);
             this.logProcesses.set(panelKey, logProcess);
 
             if (logProcess) {
-                // stdout を監視
+                // Monitor stdout
                 logProcess.stdout?.on('data', (data: Buffer) => {
                     this.sendLogToPanel(panel, 'stdout', data.toString(), config.autoScrollLog);
                 });
 
-                // stderr を監視
+                // Monitor stderr
                 logProcess.stderr?.on('data', (data: Buffer) => {
                     this.sendLogToPanel(panel, 'stderr', data.toString(), config.autoScrollLog);
                 });
 
-                // プロセス終了時
+                // When process exits
                 logProcess.on('exit', (code: number) => {
                     this.sendLogToPanel(panel, 'system', `Process exited with code ${code}`, config.autoScrollLog);
                 });
             } else {
-                // プロセスにアタッチできない場合は、ファイルベースのログ監視を試行
+                // If cannot attach to process, try file-based log monitoring
                 this.sendLogToPanel(panel, 'system', 'Direct process attachment not available. Monitoring log files...', config.autoScrollLog);
                 await this.startFileBasedLogMonitoring(panelKey, portInfo, panel, config);
             }
@@ -112,15 +112,15 @@ export class LogViewer {
     }
 
     /**
-     * プロセスにアタッチ（実際の実装では制限があるため、代替手段を使用）
-     * @param pid プロセスID
-     * @returns プロセスオブジェクト
+     * Attach to process (uses alternative methods due to limitations in actual implementation)
+     * @param pid Process ID
+     * @returns Process object
      */
     private async attachToProcess(pid: number): Promise<any> {
-        // 注意: 既存のプロセスの stdout/stderr を直接キャプチャするのは困難
-        // 代替として、strace や dtrace を使用するか、ログファイル監視を実装
+        // Note: Direct capture of existing process stdout/stderr is difficult
+        // Alternatively, use strace or dtrace, or implement log file monitoring
         
-        // 簡易実装として、プロセス監視のみ
+        // Simple implementation - process monitoring only
         try {
             const { spawn } = require('child_process');
             
@@ -128,11 +128,11 @@ export class LogViewer {
             let args: string[];
             
             if (process.platform === 'win32') {
-                // Windows では PowerShell を使用してプロセス監視
+                // Use PowerShell for process monitoring on Windows
                 command = 'powershell';
                 args = ['-Command', `Get-Process -Id ${pid} | Format-Table -AutoSize`];
             } else {
-                // Unix系では ps を使用
+                // Use ps on Unix-like systems
                 command = 'ps';
                 args = ['-p', pid.toString(), '-o', 'pid,ppid,cmd'];
             }
@@ -146,11 +146,11 @@ export class LogViewer {
     }
 
     /**
-     * ファイルベースのログ監視を開始
-     * @param panelKey パネルキー
-     * @param portInfo ポート情報
-     * @param panel Webviewパネル
-     * @param config ログ設定
+     * Start file-based log monitoring
+     * @param panelKey Panel key
+     * @param portInfo Port information
+     * @param panel Webview panel
+     * @param config Log configuration
      */
     private async startFileBasedLogMonitoring(
         panelKey: string,
@@ -158,7 +158,7 @@ export class LogViewer {
         panel: vscode.WebviewPanel,
         config: { logBufferSize: number, autoScrollLog: boolean }
     ): Promise<void> {
-        // 一般的なログファイルの場所を監視
+        // Monitor common log file locations
         const logPaths = this.getCommonLogPaths(portInfo);
         
         for (const logPath of logPaths) {
@@ -167,15 +167,15 @@ export class LogViewer {
                 if (fs.existsSync(logPath)) {
                     this.sendLogToPanel(panel, 'system', `Monitoring log file: ${logPath}`, config.autoScrollLog);
                     
-                    // ファイル変更を監視
+                    // Monitor file changes
                     const watcher = fs.watchFile(logPath, (curr: any, prev: any) => {
                         if (curr.mtime > prev.mtime) {
-                            // ファイルが更新された場合、新しい内容を読み取り
+                            // If file was updated, read new content
                             this.readLogFileUpdates(logPath, panel, config);
                         }
                     });
                     
-                    // 初期内容を読み込み
+                    // Read initial content
                     this.readLogFileInitial(logPath, panel, config);
                     break;
                 }
@@ -186,23 +186,23 @@ export class LogViewer {
     }
 
     /**
-     * 一般的なログファイルパスを取得
-     * @param portInfo ポート情報
-     * @returns ログファイルパスの配列
+     * Get common log file paths
+     * @param portInfo Port information
+     * @returns Array of log file paths
      */
     private getCommonLogPaths(portInfo: PortInfo): string[] {
         const paths: string[] = [];
         const port = portInfo.port;
         
         if (process.platform === 'win32') {
-            // Windows の一般的なログパス
+            // Common log paths on Windows
             paths.push(
                 `C:\\logs\\app_${port}.log`,
                 `C:\\temp\\${port}.log`,
                 `${process.env.USERPROFILE}\\AppData\\Local\\Temp\\${port}.log`
             );
         } else {
-            // Unix系の一般的なログパス
+            // Common log paths on Unix-like systems
             paths.push(
                 `/var/log/app_${port}.log`,
                 `/tmp/${port}.log`,
@@ -216,10 +216,10 @@ export class LogViewer {
     }
 
     /**
-     * ログファイルの初期内容を読み込み
-     * @param logPath ログファイルパス
-     * @param panel Webviewパネル
-     * @param config ログ設定
+     * Read initial content of log file
+     * @param logPath Log file path
+     * @param panel Webview panel
+     * @param config Log configuration
      */
     private readLogFileInitial(
         logPath: string, 
@@ -246,26 +246,26 @@ export class LogViewer {
     }
 
     /**
-     * ログファイルの更新を読み込み
-     * @param logPath ログファイルパス
-     * @param panel Webviewパネル
-     * @param config ログ設定
+     * Read log file updates
+     * @param logPath Log file path
+     * @param panel Webview panel
+     * @param config Log configuration
      */
     private readLogFileUpdates(
         logPath: string, 
         panel: vscode.WebviewPanel, 
         config: { logBufferSize: number, autoScrollLog: boolean }
     ): void {
-        // 実装は簡略化 - 実際にはファイルの最後から新しい行のみ読み取り
+        // Implementation is simplified - actually should read only new lines from end of file
         this.readLogFileInitial(logPath, panel, config);
     }
 
     /**
-     * パネルにログメッセージを送信
-     * @param panel Webviewパネル
-     * @param type ログタイプ
-     * @param message メッセージ
-     * @param autoScroll 自動スクロールするか
+     * Send log message to panel
+     * @param panel Webview panel
+     * @param type Log type
+     * @param message Message
+     * @param autoScroll Whether to auto scroll
      */
     private sendLogToPanel(panel: vscode.WebviewPanel, type: string, message: string, autoScroll: boolean): void {
         panel.webview.postMessage({
@@ -278,8 +278,8 @@ export class LogViewer {
     }
 
     /**
-     * パネルにスクロールコマンドを送信
-     * @param panel Webviewパネル
+     * Send scroll command to panel
+     * @param panel Webview panel
      */
     private sendScrollCommand(panel: vscode.WebviewPanel): void {
         panel.webview.postMessage({
@@ -288,8 +288,8 @@ export class LogViewer {
     }
 
     /**
-     * ログキャプチャを停止
-     * @param panelKey パネルキー
+     * Stop log capture
+     * @param panelKey Panel key
      */
     private stopLogCapture(panelKey: string): void {
         const childProcess = this.logProcesses.get(panelKey);
@@ -304,10 +304,10 @@ export class LogViewer {
     }
 
     /**
-     * ログビューアのHTMLを生成
-     * @param portInfo ポート情報
-     * @param config ログ設定
-     * @returns HTML文字列
+     * Generate HTML for log viewer
+     * @param portInfo Port information
+     * @param config Log configuration
+     * @returns HTML string
      */
     private getLogViewerHtml(portInfo: PortInfo, config: { logBufferSize: number, autoScrollLog: boolean }): string {
         return `
@@ -402,6 +402,7 @@ export class LogViewer {
                 let logBuffer = [];
                 const maxBufferSize = ${config.logBufferSize};
 
+                // Add event listener for messages from extension
                 window.addEventListener('message', event => {
                     const message = event.data;
                     
@@ -425,7 +426,7 @@ export class LogViewer {
                     
                     container.appendChild(entry);
                     
-                    // バッファサイズを超えた場合、古いエントリを削除
+                    // If buffer size exceeded, remove old entries
                     logBuffer.push(entry);
                     if (logBuffer.length > maxBufferSize) {
                         const oldEntry = logBuffer.shift();
@@ -464,7 +465,7 @@ export class LogViewer {
     }
 
     /**
-     * 全てのログビューアを閉じる
+     * Close all log viewers
      */
     public dispose(): void {
         for (const [key, panel] of this.logPanels) {

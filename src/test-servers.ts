@@ -1,9 +1,9 @@
-// テスト用スクリプト
+// Test script
 import * as http from 'http';
 import * as net from 'net';
 
 /**
- * テスト用のHTTPサーバーを作成
+ * Create test HTTP server
  */
 function createTestServer(port: number): http.Server {
     const server = http.createServer((req, res) => {
@@ -19,7 +19,7 @@ function createTestServer(port: number): http.Server {
 }
 
 /**
- * テスト用のTCPサーバーを作成
+ * Create test TCP server
  */
 function createTcpServer(port: number): net.Server {
     const server = net.createServer((socket) => {
@@ -37,23 +37,23 @@ function createTcpServer(port: number): net.Server {
 }
 
 /**
- * テストサーバーを起動
+ * Start test servers
  */
 function startTestServers() {
     const servers: (http.Server | net.Server)[] = [];
     
-    // HTTPサーバー
+    // HTTP servers
     servers.push(createTestServer(3000));
     servers.push(createTestServer(3001));
     servers.push(createTestServer(3002));
     
-    // TCPサーバー
+    // TCP servers
     servers.push(createTcpServer(8080));
     servers.push(createTcpServer(9090));
     
     console.log('All test servers started');
     
-    // Ctrl+Cで停止
+    // Stop with Ctrl+C
     process.on('SIGINT', () => {
         console.log('\nShutting down test servers...');
         servers.forEach(server => server.close());

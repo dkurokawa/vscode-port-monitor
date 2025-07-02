@@ -1,34 +1,33 @@
 # Port Monitor - Use Case Examples
 
-実際の開発シーンに合わせた具体的な設定例を紹介します。
+Specific configuration examples tailored to real development scenarios.
 
-## 🎯 実践的なユースケース
+**Note**: All examples showcase the new intelligent configuration processing that automatically handles well-known port names, port ranges, and multiple configuration formats.
 
-### Case 1: スタートアップのフルスタック開発
+## 🎯 Practical Use Cases
+
+### Case 1: Startup Full-Stack Development
 ```json
 {
   "portMonitor.hosts": {
-    "メインアプリ": {
-      "localhost": [3000, 3001, 3002]
-    },
-    "マイクロサービス": {
-      "localhost": [8001, 8002, 8003, 8004]
-    },
-    "インフラ": {
-      "localhost": [5432, 6379, 9200]
-    },
-    "開発ツール": {
-      "localhost": [6006, 4000, 8080]
+    "localhost": {
+      "Frontend": {
+        3000: "Customer App",
+        3001: "Admin Panel", 
+        3002: "Landing Page"
+      },
+      "Microservices": {
+        "8001-8004": "APIs"
+      },
+      "Infrastructure": ["postgresql", "redis", 9200],
+      "Dev Tools": [6006, 4000, 8080]
     }
   },
   "portMonitor.portLabels": {
-    "3000": "顧客向けアプリ",
-    "3001": "管理画面",
-    "3002": "ランディングページ",
-    "8001": "認証API",
-    "8002": "ユーザーAPI",
-    "8003": "決済API",
-    "8004": "通知API",
+    "8001": "Auth API",
+    "8002": "User API",
+    "8003": "Payment API",
+    "8004": "Notification API",
     "5432": "PostgreSQL",
     "6379": "Redis",
     "9200": "Elasticsearch",
@@ -44,37 +43,37 @@
 }
 ```
 
-### Case 2: 大企業のマルチプロジェクト環境
+### Case 2: Enterprise Multi-Project Environment
 ```json
 {
   "portMonitor.hosts": {
-    "プロジェクトA": {
+    "Project A": {
       "localhost": [3000, 3001, 5000, 5001]
     },
-    "プロジェクトB": {
+    "Project B": {
       "localhost": [3010, 3011, 5010, 5011]
     },
-    "プロジェクトC": {
+    "Project C": {
       "localhost": [3020, 3021, 5020, 5021]
     },
-    "共通インフラ": {
+    "Shared Infrastructure": {
       "localhost": [5432, 3306, 6379, 27017]
     },
-    "開発支援": {
+    "Dev Support": {
       "localhost": [6006, 6016, 6026, 8080]
     }
   },
   "portMonitor.portLabels": {
-    "3000": "A: 顧客画面",
-    "3001": "A: 管理画面",
+    "3000": "A: Customer UI",
+    "3001": "A: Admin Panel",
     "5000": "A: API",
     "5001": "A: Worker",
-    "3010": "B: 顧客画面",
-    "3011": "B: 管理画面",
+    "3010": "B: Customer UI",
+    "3011": "B: Admin Panel",
     "5010": "B: API",
     "5011": "B: Worker",
-    "3020": "C: 顧客画面",
-    "3021": "C: 管理画面",
+    "3020": "C: Customer UI",
+    "3021": "C: Admin Panel",
     "5020": "C: API",
     "5021": "C: Worker",
     "5432": "PostgreSQL",
@@ -84,79 +83,79 @@
     "6006": "A: Storybook",
     "6016": "B: Storybook",
     "6026": "C: Storybook",
-    "8080": "共通Gateway"
+    "8080": "Shared Gateway"
   }
 }
 ```
 
-### Case 3: E-Commerce開発チーム
+### Case 3: E-Commerce Development Team
 ```json
 {
   "portMonitor.hosts": {
-    "フロントエンド": {
+    "Frontend": {
       "localhost": [3000, 3001, 3002, 3003]
     },
-    "バックエンドAPI": {
+    "Backend APIs": {
       "localhost": [8000, 8001, 8002, 8003, 8004]
     },
-    "決済・外部連携": {
+    "Payment & External": {
       "localhost": [9000, 9001, 9002]
     },
-    "データベース": {
+    "Databases": {
       "localhost": [5432, 3306, 6379, 27017]
     }
   },
   "portMonitor.portLabels": {
-    "3000": "ショップ画面",
-    "3001": "管理画面",
-    "3002": "モバイルアプリ",
-    "3003": "POS システム",
-    "8000": "商品API",
-    "8001": "ユーザーAPI",
-    "8002": "注文API",
-    "8003": "在庫API",
-    "8004": "レコメンドAPI",
-    "9000": "決済Gateway",
-    "9001": "外部API Proxy",
+    "3000": "Shop UI",
+    "3001": "Admin Panel",
+    "3002": "Mobile App",
+    "3003": "POS System",
+    "8000": "Product API",
+    "8001": "User API",
+    "8002": "Order API",
+    "8003": "Inventory API",
+    "8004": "Recommendation API",
+    "9000": "Payment Gateway",
+    "9001": "External API Proxy",
     "9002": "Webhook Handler",
-    "5432": "商品DB",
-    "3306": "ユーザーDB",
-    "6379": "セッション",
-    "27017": "ログ・分析"
+    "5432": "Product DB",
+    "3306": "User DB",
+    "6379": "Session Store",
+    "27017": "Logs & Analytics"
   }
 }
 ```
 
-### Case 4: SaaS開発（マルチテナント）
+### Case 4: SaaS Development (Multi-tenant)
 ```json
 {
   "portMonitor.hosts": {
-    "テナントA": {
+    "Tenant A": {
       "localhost": [3000, 5000]
     },
-    "テナントB": {
+    "Tenant B": {
       "localhost": [3001, 5001]
     },
-    "テナントC": {
+    "Tenant C": {
       "localhost": [3002, 5002]
     },
-    "管理・共通": {
+    "Admin & Shared": {
       "localhost": [3100, 5100, 8080]
     },
-    "インフラ": {
+    "Infrastructure": {
       "localhost": [5432, 6379, 9200, 5601]
     }
   },
   "portMonitor.portLabels": {
-    "3000": "テナントA UI",
-    "5000": "テナントA API",
-    "3001": "テナントB UI",
-    "5001": "テナントB API",
-    "3002": "テナントC UI",
-    "5002": "テナントC API",
-    "3100": "管理画面",
-    "5100": "管理API",
-    "8080": "プロキシ",
+    "3000": "Tenant A UI",
+    "5000": "Tenant A API",
+    "3001": "Tenant B UI",
+    "5001": "Tenant B API",
+    "3002": "Tenant C UI",
+    "5002": "Tenant C API",
+    "3100": "Admin Panel",
+    "5100": "Admin API",
+    "8080": "Proxy",
     "5432": "PostgreSQL",
     "6379": "Redis",
     "9200": "Elasticsearch",
@@ -171,23 +170,23 @@
 }
 ```
 
-### Case 5: モバイルアプリ開発（React Native + Backend）
+### Case 5: Mobile App Development (React Native + Backend)
 ```json
 {
   "portMonitor.hosts": {
     "React Native": {
       "localhost": [8081, 19000, 19001, 19002]
     },
-    "API開発": {
+    "API Development": {
       "localhost": [3000, 3001, 3002]
     },
-    "モックサーバー": {
+    "Mock Servers": {
       "localhost": [4000, 4001, 4002]
     },
-    "データベース": {
+    "Databases": {
       "localhost": [5432, 6379]
     },
-    "開発ツール": {
+    "Dev Tools": {
       "localhost": [9090, 3030, 8080]
     }
   },
@@ -196,12 +195,12 @@
     "19000": "Expo DevTools",
     "19001": "iOS Simulator",
     "19002": "Android Emulator",
-    "3000": "認証API",
-    "3001": "データAPI",
-    "3002": "通知API",
-    "4000": "認証Mock",
-    "4001": "データMock",
-    "4002": "通知Mock",
+    "3000": "Auth API",
+    "3001": "Data API",
+    "3002": "Notification API",
+    "4000": "Auth Mock",
+    "4001": "Data Mock",
+    "4002": "Notification Mock",
     "5432": "PostgreSQL",
     "6379": "Redis",
     "9090": "Flipper",
@@ -211,23 +210,23 @@
 }
 ```
 
-### Case 6: AI/ML開発環境
+### Case 6: AI/ML Development Environment
 ```json
 {
   "portMonitor.hosts": {
-    "Jupyter環境": {
+    "Jupyter Environment": {
       "localhost": [8888, 8889, 8890, 8891]
     },
-    "ML API": {
+    "ML APIs": {
       "localhost": [5000, 5001, 5002, 5003]
     },
-    "フロントエンド": {
+    "Frontend": {
       "localhost": [3000, 3001]
     },
-    "データ基盤": {
+    "Data Platform": {
       "localhost": [5432, 27017, 9200, 6379]
     },
-    "監視・可視化": {
+    "Monitoring & Visualization": {
       "localhost": [6006, 4040, 9090, 3333]
     }
   },
@@ -235,13 +234,13 @@
     "8888": "Jupyter Lab",
     "8889": "Jupyter Notebook",
     "8890": "JupyterHub",
-    "8891": "Jupyter (実験用)",
-    "5000": "推論API",
-    "5001": "学習API",
-    "5002": "前処理API",
-    "5003": "評価API",
-    "3000": "ML管理画面",
-    "3001": "実験結果画面",
+    "8891": "Jupyter (Experimental)",
+    "5000": "Inference API",
+    "5001": "Training API",
+    "5002": "Preprocessing API",
+    "5003": "Evaluation API",
+    "3000": "ML Admin Panel",
+    "3001": "Experiment Results",
     "5432": "PostgreSQL",
     "27017": "MongoDB",
     "9200": "Elasticsearch",
@@ -254,65 +253,65 @@
 }
 ```
 
-### Case 7: ゲーム開発（Unity + サーバー）
+### Case 7: Game Development (Unity + Server)
 ```json
 {
   "portMonitor.hosts": {
-    "ゲームサーバー": {
+    "Game Servers": {
       "localhost": [7777, 7778, 7779, 7780]
     },
-    "Web管理": {
+    "Web Management": {
       "localhost": [3000, 3001, 8080]
     },
-    "データベース": {
+    "Databases": {
       "localhost": [5432, 6379, 27017]
     },
-    "分析・監視": {
+    "Analytics & Monitoring": {
       "localhost": [9090, 3030, 8086]
     }
   },
   "portMonitor.portLabels": {
-    "7777": "メインゲーム",
-    "7778": "マッチメイキング",
-    "7779": "ロビーサーバー",
-    "7780": "チャットサーバー",
-    "3000": "管理画面",
-    "3001": "プレイヤー画面",
+    "7777": "Main Game",
+    "7778": "Matchmaking",
+    "7779": "Lobby Server",
+    "7780": "Chat Server",
+    "3000": "Admin Panel",
+    "3001": "Player Dashboard",
     "8080": "API Gateway",
-    "5432": "ゲームDB",
-    "6379": "セッション",
-    "27017": "ログ・統計",
-    "9090": "監視",
-    "3030": "分析画面",
-    "8086": "メトリクス"
+    "5432": "Game DB",
+    "6379": "Session Store",
+    "27017": "Logs & Stats",
+    "9090": "Monitoring",
+    "3030": "Analytics Dashboard",
+    "8086": "Metrics"
   }
 }
 ```
 
-### Case 8: DevOps・CI/CD環境
+### Case 8: DevOps・CI/CD Environment
 ```json
 {
   "portMonitor.hosts": {
-    "アプリケーション": {
+    "Applications": {
       "localhost": [3000, 3001, 3002]
     },
     "CI/CD": {
       "localhost": [8080, 8081, 9000]
     },
-    "監視・ログ": {
+    "Monitoring & Logs": {
       "localhost": [9090, 3333, 9200, 5601]
     },
-    "データベース": {
+    "Databases": {
       "localhost": [5432, 6379]
     },
-    "コンテナ": {
+    "Containers": {
       "localhost": [2375, 2376, 8000]
     }
   },
   "portMonitor.portLabels": {
-    "3000": "Dev環境",
-    "3001": "Staging環境",
-    "3002": "Test環境",
+    "3000": "Dev Environment",
+    "3001": "Staging Environment",
+    "3002": "Test Environment",
     "8080": "Jenkins",
     "8081": "GitLab CI",
     "9000": "SonarQube",
@@ -329,36 +328,36 @@
 }
 ```
 
-### Case 9: 教育・学習環境
+### Case 9: Education & Learning Environment
 ```json
 {
   "portMonitor.hosts": {
-    "学習プロジェクト1": {
+    "Learning Project 1": {
       "localhost": [3000, 5000]
     },
-    "学習プロジェクト2": {
+    "Learning Project 2": {
       "localhost": [3001, 5001]
     },
-    "学習プロジェクト3": {
+    "Learning Project 3": {
       "localhost": [3002, 5002]
     },
-    "チュートリアル": {
+    "Tutorials": {
       "localhost": [8080, 8081, 8082]
     },
-    "共通ツール": {
+    "Shared Tools": {
       "localhost": [5432, 6379, 6006]
     }
   },
   "portMonitor.portLabels": {
-    "3000": "React学習",
-    "5000": "Express学習",
-    "3001": "Vue学習",
-    "5001": "FastAPI学習",
-    "3002": "Angular学習",
-    "5002": "Django学習",
-    "8080": "HTML/CSS練習",
-    "8081": "JavaScript練習",
-    "8082": "TypeScript練習",
+    "3000": "React Learning",
+    "5000": "Express Learning",
+    "3001": "Vue Learning",
+    "5001": "FastAPI Learning",
+    "3002": "Angular Learning",
+    "5002": "Django Learning",
+    "8080": "HTML/CSS Practice",
+    "8081": "JavaScript Practice",
+    "8082": "TypeScript Practice",
     "5432": "PostgreSQL",
     "6379": "Redis",
     "6006": "Storybook"
@@ -372,38 +371,38 @@
 }
 ```
 
-### Case 10: フリーランス・複数クライアント
+### Case 10: Freelance・Multiple Clients
 ```json
 {
   "portMonitor.hosts": {
-    "クライアントA": {
+    "Client A": {
       "localhost": [3000, 3001, 5000]
     },
-    "クライアントB": {
+    "Client B": {
       "localhost": [3010, 3011, 5010]
     },
-    "クライアントC": {
+    "Client C": {
       "localhost": [3020, 3021, 5020]
     },
-    "個人プロジェクト": {
+    "Personal Projects": {
       "localhost": [3100, 5100]
     },
-    "共通ツール": {
+    "Shared Tools": {
       "localhost": [5432, 6379, 6006]
     }
   },
   "portMonitor.portLabels": {
-    "3000": "A: ECサイト",
-    "3001": "A: 管理画面",
+    "3000": "A: E-commerce",
+    "3001": "A: Admin Panel",
     "5000": "A: API",
-    "3010": "B: コーポレート",
+    "3010": "B: Corporate Site",
     "3011": "B: CMS",
     "5010": "B: API",
-    "3020": "C: ブログ",
-    "3021": "C: ダッシュボード",
+    "3020": "C: Blog",
+    "3021": "C: Dashboard",
     "5020": "C: API",
-    "3100": "個人: ポートフォリオ",
-    "5100": "個人: API",
+    "3100": "Personal: Portfolio",
+    "5100": "Personal: API",
     "5432": "PostgreSQL",
     "6379": "Redis",
     "6006": "Storybook"

@@ -9,7 +9,7 @@ declare module 'tcp-port-used' {
 export interface PortMonitorConfig {
     hosts: Record<string, (string | number)[] | Record<string, (string | number)[]>>;
     portLabels: Record<string, string>;
-    statusIcons: { open: string; closed: string };
+    statusIcons: { inUse: string; free: string };
     intervalMs: number;
     enableProcessKill: boolean;
     confirmBeforeKill: boolean;

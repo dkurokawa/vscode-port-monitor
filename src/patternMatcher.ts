@@ -1,47 +1,47 @@
 /**
- * Globパターンマッチング機能
- * PortMonitorでのポートラベル設定用
+ * Glob pattern matching functionality
+ * For port label configuration in PortMonitor
  */
 export class PatternMatcher {
     /**
-     * Globパターンでポート番号をマッチング
-     * @param pattern Globパターン（例: "300*", "*443", "30?0"）
-     * @param port ポート番号
-     * @returns マッチするかどうか
+     * Match port numbers with glob patterns
+     * @param pattern Glob pattern (e.g., "300*", "*443", "30?0")
+     * @param port Port number
+     * @returns Whether it matches
      */
     public static match(pattern: string, port: number): boolean {
         const portStr = port.toString();
         
-        // 完全一致
+        // Exact match
         if (pattern === portStr) {
             return true;
         }
 
-        // Globパターンマッチング
+        // Glob pattern matching
         const regex = this.globToRegex(pattern);
         return regex.test(portStr);
     }
 
     /**
-     * 複数のパターンから最も具体的なマッチを見つける
-     * @param patterns パターンの配列（優先度順）
-     * @param port ポート番号
-     * @returns マッチしたパターン、または undefined
+     * Find the most specific match from multiple patterns
+     * @param patterns Array of patterns (in priority order)
+     * @param port Port number
+     * @returns Matched pattern, or undefined
      */
     public static findBestMatch(patterns: string[], port: number): string | undefined {
         const portStr = port.toString();
         
-        // 完全一致を最優先
+        // Exact match gets highest priority
         if (patterns.includes(portStr)) {
             return portStr;
         }
 
-        // 具体性でソート（ワイルドカードが少ない順）
+        // Sort by specificity (fewer wildcards first)
         const sortedPatterns = patterns
-            .filter(p => p !== portStr) // 完全一致は除外
+            .filter(p => p !== portStr) // Exclude exact matches
             .sort((a, b) => this.getSpecificity(a) - this.getSpecificity(b));
 
-        // 最初にマッチしたパターンを返す
+        // Return the first matched pattern
         for (const pattern of sortedPatterns) {
             if (this.match(pattern, port)) {
                 return pattern;
@@ -52,54 +52,54 @@ export class PatternMatcher {
     }
 
     /**
-     * Globパターンを正規表現に変換
-     * @param pattern Globパターン
-     * @returns 正規表現
+     * Convert glob pattern to regular expression
+     * @param pattern Glob pattern
+     * @returns Regular expression
      */
     private static globToRegex(pattern: string): RegExp {
         let regex = pattern
-            .replace(/[.+^${}()|[\]\\]/g, '\\$&') // 正規表現の特殊文字をエスケープ
-            .replace(/\*/g, '.*')                 // * を .* に変換
-            .replace(/\?/g, '.');                 // ? を . に変換
+            .replace(/[.+^${}()|[\]\\]/g, '\\$&') // Escape regex special characters
+            .replace(/\*/g, '.*')                 // Convert * to .*
+            .replace(/\?/g, '.');                 // Convert ? to .
 
         return new RegExp(`^${regex}$`);
     }
 
     /**
-     * パターンの具体性を計算（数値が小さいほど具体的）
-     * @param pattern Globパターン
-     * @returns 具体性スコア
+     * Calculate pattern specificity (smaller numbers are more specific)
+     * @param pattern Glob pattern
+     * @returns Specificity score
      */
     private static getSpecificity(pattern: string): number {
         let score = 0;
         
-        // ワイルドカードが多いほどスコアが高い（具体性が低い）
+        // More wildcards = higher score (less specific)
         const wildcards = (pattern.match(/[*?]/g) || []).length;
         score += wildcards * 10;
         
-        // 全体がワイルドカード（*）の場合は最低優先度
+        // If entire pattern is wildcard (*), give lowest priority
         if (pattern === '*') {
             score += 1000;
         }
         
-        // パターンが短いほど具体性が低い
+        // Shorter patterns are less specific
         score += (10 - pattern.length);
         
         return score;
     }
 
     /**
-     * パターンがワイルドカードを含むかチェック
-     * @param pattern パターン文字列
-     * @returns ワイルドカードを含むかどうか
+     * Check if pattern contains wildcards
+     * @param pattern Pattern string
+     * @returns Whether it contains wildcards
      */
     public static hasWildcard(pattern: string): boolean {
         return /[*?]/.test(pattern);
     }
 
     /**
-     * パターンマッチングのテスト用ユーティリティ
-     * @param patterns パターンとポートのテストケース
+     * Utility for testing pattern matching
+     * @param patterns Test cases of patterns and ports
      */
     public static test(patterns: Array<{ pattern: string, port: number, expected: boolean }>): void {
         console.log('Pattern Matching Test Results:');
