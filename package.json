@@ -2,7 +2,7 @@
   "name": "vscode-port-monitor",
   "displayName": "Port Monitor",
   "description": "Monitor multiple hosts and ports with real-time status display in VS Code status bar",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "publisher": "dkurokawa",
   "license": "MIT",
   "repository": {
@@ -97,7 +97,9 @@
     "start-test-servers": "npm run compile-test && node out/test-servers.js",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "package": "vsce package",
+    "publish": "vsce publish"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

@@ -61,14 +61,25 @@ export class PortMonitorExtension {
 
     private async onConfigurationChanged(): Promise<void> {
         this.configManager.refresh();
-        const config = this.configManager.getConfig();
-
-        // Validate configuration
-        const errors = ConfigManager.validateConfig(config);
-        if (errors.length > 0) {
-            vscode.window.showErrorMessage(`Port Monitor configuration error: ${errors.join(', ')}`);
+        
+        // Validate raw configuration before processing
+        const rawConfig = vscode.workspace.getConfiguration('portMonitor');
+        const validationErrors = ConfigManager.validateRawConfig({
+            hosts: rawConfig.get('hosts'),
+            intervalMs: rawConfig.get('intervalMs'),
+            portLabels: rawConfig.get('portLabels'),
+            statusIcons: rawConfig.get('statusIcons'),
+            backgroundColor: rawConfig.get('backgroundColor'),
+            portColors: rawConfig.get('portColors')
+        });
+        
+        if (validationErrors.length > 0) {
+            vscode.window.showErrorMessage(`Port Monitor configuration error: ${validationErrors.join(', ')}`);
             return;
         }
+
+        // Get processed configuration
+        const config = this.configManager.getConfig();
 
         // Stop current monitoring
         if (this.currentMonitorId) {

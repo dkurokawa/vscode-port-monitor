@@ -19,10 +19,12 @@ node_modules/**
 .eslintrc.json
 .prettierrc
 jest.config.json
+jest.setup.js
 tsconfig.json
 tsconfig.test.json
 webpack.config.js
 vsc-extension-quickstart.md
+__mocks__/**
 
 # Documentation and examples
 docs/
@@ -36,3 +38,4 @@ Thumbs.db
 
 # Development internal files
 forAI.txt
+.claude/**

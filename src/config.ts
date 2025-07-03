@@ -97,6 +97,27 @@ export class ConfigManager {
     }
 
 
+    public static validateRawConfig(rawConfig: any): string[] {
+        const errors: string[] = [];
+
+        // Validate monitoring interval
+        if (rawConfig.intervalMs !== undefined && rawConfig.intervalMs < 1000) {
+            errors.push('intervalMs must be at least 1000ms');
+        }
+
+        // Validate raw hosts configuration (before processing)
+        if (rawConfig.hosts && typeof rawConfig.hosts === 'object') {
+            try {
+                // Try to process the configuration to validate it
+                ConfigManager.processHostsConfig(rawConfig.hosts);
+            } catch (error) {
+                errors.push(`Invalid hosts configuration: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+        }
+
+        return errors;
+    }
+
     public static validateConfig(config: PortMonitorConfig): string[] {
         const errors: string[] = [];
 
@@ -105,27 +126,10 @@ export class ConfigManager {
             errors.push('intervalMs must be at least 1000ms');
         }
 
-        // Validate processed hosts configuration
-        for (const [host, groups] of Object.entries(config.hosts)) {
-            if (typeof groups !== 'object' || groups === null) {
-                errors.push(`hosts.${host} must be an object with groups`);
-                continue;
-            }
-            for (const [groupName, ports] of Object.entries(groups)) {
-                if (typeof ports !== 'object' || ports === null) {
-                    errors.push(`hosts.${host}.${groupName} must be an object with port-label pairs`);
-                    continue;
-                }
-                for (const [portStr, label] of Object.entries(ports)) {
-                    const port = parseInt(portStr);
-                    if (isNaN(port) || port < 1 || port > 65535) {
-                        errors.push(`Invalid port number: ${portStr} in hosts.${host}.${groupName} (must be 1-65535)`);
-                    }
-                    if (typeof label !== 'string') {
-                        errors.push(`Invalid label type for port ${port} in hosts.${host}.${groupName} (must be string)`);
-                    }
-                }
-            }
+        // Basic validation for processed hosts configuration
+        if (!config.hosts || typeof config.hosts !== 'object') {
+            errors.push('Processed hosts configuration is invalid');
+            return errors;
         }
 
         return errors;

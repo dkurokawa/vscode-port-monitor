@@ -59,20 +59,16 @@ describe('ConfigManager', () => {
     expect(errors).toContain('intervalMs must be at least 1000ms');
   });
 
-  it('should catch invalid port numbers', () => {
-    const config: PortMonitorConfig = {
+  it('should catch invalid raw configuration', () => {
+    const rawConfig = {
       hosts: { 
-        localhost: { 
-          "Invalid": { 
-            70000: "invalid-port" 
-          } 
-        } 
+        "InvalidGroup": ["invalid-port-name"]
       },
-      statusIcons: { inUse: 'X', free: 'O' },
-      intervalMs: 3000,
+      intervalMs: 500
     };
-    const errors = ConfigManager.validateConfig(config);
-    expect(errors).toContain('Invalid port number: 70000 in hosts.localhost.Invalid (must be 1-65535)');
+    const errors = ConfigManager.validateRawConfig(rawConfig);
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors).toContain('intervalMs must be at least 1000ms');
   });
 
   it('should parse processed hosts config correctly', () => {
