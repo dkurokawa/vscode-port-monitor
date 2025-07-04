@@ -2,7 +2,7 @@
   "name": "vscode-port-monitor",
   "displayName": "Port Monitor",
   "description": "Monitor multiple hosts and ports with real-time status display in VS Code status bar",
-  "version": "0.3.3",
+  "version": "0.3.5",
   "publisher": "dkurokawa",
   "license": "MIT",
   "repository": {
@@ -68,6 +68,12 @@
           "type": "object",
           "default": {},
           "description": "Background colors for specific ports. Example: {'3000': '#ffcccc', '8080': 'statusBarItem.errorBackground'}"
+        },
+        "portMonitor.statusBarPosition": {
+          "type": "string",
+          "enum": ["left", "right"],
+          "default": "right",
+          "description": "Status bar position (left or right)"
         }
       }
     },

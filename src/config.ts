@@ -15,12 +15,14 @@ export interface PortMonitorConfig {
     intervalMs: number;
     backgroundColor?: string;
     portColors?: Record<string, string>;
+    statusBarPosition?: 'left' | 'right';
 }
 
 export interface PortInfo {
     host: string;
     port: number;
     label: string;
+    group: string;
     isOpen: boolean;
     pid?: number;
     processName?: string;
@@ -81,6 +83,7 @@ export class ConfigManager {
         const intervalMs = this.config.get<number>('intervalMs');
         const backgroundColor = this.config.get<string>('backgroundColor');
         const portColors = this.config.get<Record<string, string>>('portColors');
+        const statusBarPosition = this.config.get<'left' | 'right'>('statusBarPosition');
         
         return {
             hosts: processedHosts,
@@ -88,7 +91,8 @@ export class ConfigManager {
             statusIcons,
             intervalMs: Math.max(1000, intervalMs !== undefined ? intervalMs : 3000),
             backgroundColor,
-            portColors
+            portColors,
+            statusBarPosition
         };
     }
 
@@ -108,10 +112,106 @@ export class ConfigManager {
         // Validate raw hosts configuration (before processing)
         if (rawConfig.hosts && typeof rawConfig.hosts === 'object') {
             try {
+                // Check for common configuration mistakes
+                const configErrors = ConfigManager.validateHostsStructure(rawConfig.hosts);
+                errors.push(...configErrors);
+                
                 // Try to process the configuration to validate it
                 ConfigManager.processHostsConfig(rawConfig.hosts);
             } catch (error) {
                 errors.push(`Invalid hosts configuration: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+        }
+
+        return errors;
+    }
+
+    /**
+     * Validate hosts configuration structure and provide helpful error messages
+     */
+    public static validateHostsStructure(hosts: any): string[] {
+        const errors: string[] = [];
+
+        if (!hosts || typeof hosts !== 'object') {
+            errors.push('hosts must be an object');
+            return errors;
+        }
+
+        // Check if hosts is empty
+        if (Object.keys(hosts).length === 0) {
+            errors.push('No ports configured. Add ports to monitor in settings.');
+            return errors;
+        }
+
+        // Check for common mistakes
+        for (const [hostKey, hostValue] of Object.entries(hosts)) {
+            if (!hostValue || typeof hostValue !== 'object') {
+                errors.push(`Host "${hostKey}" must have port configuration`);
+                continue;
+            }
+
+            // Detect reversed port-label configuration
+            const entries = Object.entries(hostValue);
+            let hasPortAsKey = false;
+            let hasPortAsValue = false;
+            let hasInvalidStructure = false;
+
+            for (const [key, value] of entries) {
+                const keyAsNum = parseInt(key);
+                const valueAsNum = typeof value === 'number' ? value : parseInt(value as string);
+
+                // Check if key looks like a port number
+                if (!isNaN(keyAsNum) && keyAsNum > 0 && keyAsNum <= 65535) {
+                    hasPortAsKey = true;
+                }
+
+                // Check if value looks like a port number
+                if (!isNaN(valueAsNum) && valueAsNum > 0 && valueAsNum <= 65535) {
+                    hasPortAsValue = true;
+                }
+
+                // Check for invalid structure
+                if (Array.isArray(value)) {
+                    // Arrays are valid
+                } else if (typeof value === 'object' && value !== null) {
+                    // Objects are valid (nested groups)
+                } else if (typeof value !== 'string' && typeof value !== 'number') {
+                    hasInvalidStructure = true;
+                }
+            }
+
+            // Detect likely reversed configuration
+            if (hasPortAsValue && !hasPortAsKey) {
+                errors.push(`Host "${hostKey}": Port numbers should be keys, not values. 
+Current: {"${Object.keys(hostValue)[0]}": ${Object.values(hostValue)[0]}}
+Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
+            }
+
+            // Detect mixed configuration
+            if (hasPortAsKey && hasPortAsValue) {
+                errors.push(`Host "${hostKey}": Mixed configuration detected. Use consistent format: {"3000": "label", "3001": "label"}`);
+            }
+
+            if (hasInvalidStructure) {
+                errors.push(`Host "${hostKey}": Invalid port configuration. Use {"port": "label"} or {"group": [3000, 3001]} format`);
+            }
+
+            // Check for empty host name
+            if (hostKey === '') {
+                errors.push('Empty host name detected. Use "localhost" instead of ""');
+            }
+
+            // Check for obviously wrong host names
+            if (hostKey.match(/^\d+$/)) {
+                errors.push(`Host "${hostKey}": Host name looks like a port number. Use "localhost" or proper hostname`);
+            }
+
+            // Check for common port range mistakes
+            for (const [key, value] of entries) {
+                if (typeof key === 'string' && key.includes('-') && typeof value === 'string') {
+                    // Likely port range in wrong place
+                    errors.push(`Host "${hostKey}": Port range "${key}" detected. Use array format: {"group": ["3000-3005"]} or {"3000-3005": "label"}`);
+                }
             }
         }
 
@@ -139,21 +239,22 @@ export class ConfigManager {
     /**
      * Generate monitoring target list from processed hosts config
      * @param config PortMonitorConfig
-     * @returns Array<{host, port, label}>
+     * @returns Array<{host, port, label, group}>
      */
-    public static parseHostsConfig(config: PortMonitorConfig): Array<{ host: string; port: number; label: string }> {
-        const result: Array<{ host: string; port: number; label: string }> = [];
+    public static parseHostsConfig(config: PortMonitorConfig): Array<{ host: string; port: number; label: string; group: string }> {
+        const result: Array<{ host: string; port: number; label: string; group: string }> = [];
         
         // Process the already-transformed hosts config
         for (const [host, groups] of Object.entries(config.hosts)) {
-            for (const [, ports] of Object.entries(groups)) {
+            for (const [groupName, ports] of Object.entries(groups)) {
                 for (const [portStr, label] of Object.entries(ports)) {
                     const port = parseInt(portStr);
                     if (!isNaN(port) && port > 0 && port <= 65535) {
                         result.push({
                             host,
                             port,
-                            label: label || ConfigManager.resolveLabelForPort(port, config.portLabels || {})
+                            label: label || ConfigManager.resolveLabelForPort(port, config.portLabels || {}),
+                            group: groupName
                         });
                     }
                 }
@@ -263,8 +364,31 @@ export class ConfigManager {
     }
 
     private static addDefaultGroupWrapper(config: any): any {
+        // Check if config is a direct port-label mapping at top level
+        const isDirectPortMapping = Object.keys(config).every(key => {
+            const num = parseInt(key);
+            return !isNaN(num) && num > 0 && num <= 65535;
+        });
+        
+        if (isDirectPortMapping) {
+            // Direct port mapping: {"3000": "user", "3001": "car"}
+            // Convert to: {"localhost": {"__NOTITLE": {"3000": "user", "3001": "car"}}}
+            return {
+                "localhost": {
+                    "__NOTITLE": config
+                }
+            };
+        }
+        
+        // Handle empty host name by converting to localhost
+        if (config[""] && typeof config[""] === 'object') {
+            const newConfig = { ...config };
+            newConfig["localhost"] = config[""];
+            delete newConfig[""];
+            config = newConfig;
+        }
+        
         // Check if config needs group wrapper by examining if values are arrays or simple port objects
-        // This should detect the "simple" format that needs wrapping
         const needsWrapper = Object.values(config).some(value => {
             if (Array.isArray(value)) {
                 return true;
@@ -283,7 +407,9 @@ export class ConfigManager {
         
         if (needsWrapper) {
             return {
-                "__NOTITLE": config
+                "localhost": {
+                    "__NOTITLE": config
+                }
             };
         }
         

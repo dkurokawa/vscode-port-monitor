@@ -10,13 +10,15 @@ Features intelligent configuration processing that automatically handles simple 
 
 ## ✨ Key Features
 
-- 🔍 **Multi-host & multi-port monitoring**
-- 🏷️ **Labeled port display** (configurable labels in settings)
-- 📊 **Real-time status display** (status bar)
-- 🛑 **Force kill processes** (one-click kill process using the port)
-- 📺 **Log viewer** (display process stdout/stderr)
-- ⚙️ **Flexible configuration** (port ranges and well-known port names supported)
-- 🎨 **Customizable** (icons and monitoring intervals)
+- 🔍 **Multi-host & multi-port monitoring** with zero external dependencies
+- 🏷️ **Intelligent configuration processing** (4-step automatic transformation)
+- 📊 **Real-time status display** (live status bar monitoring)
+- 🌐 **Well-known port support** (http, https, ssh, postgresql, etc.)
+- 📈 **Port range expansion** ("3000-3009" → individual ports)
+- 🎯 **Smart defaults** (Node.js development ports: 3000-3003)
+- 🛑 **Process management** (kill processes using ports)
+- 📺 **Log viewer** (real-time stdout/stderr display)
+- 🎨 **Customizable display** (icons, colors, intervals)
 
 ## 📸 Screenshots
 
@@ -51,8 +53,8 @@ This extension supports multiple configuration formats that are automatically pr
   "portMonitor.hosts": {
     "localhost": {
       "Next.js": {
-        3000: "app",
-        3001: "api",
+        "3000": "app",
+        "3001": "api",
         "3002-3009": "etc"
       },
       "Web": ["http", "https"]
@@ -92,7 +94,7 @@ The extension uses a 4-step intelligent processing system:
 1. **Well-known ports replacement**: `"http"` → `80`, `"https"` → `443`, etc.
 2. **Default grouping**: Simple arrays get wrapped in `"__NOTITLE"` group
 3. **Range expansion**: `"3002-3009"` → individual ports `3002, 3003, 3004...`
-4. **Array to object conversion**: `[3000, 3001]` → `{3000: "", 3001: ""}`
+4. **Array to object conversion**: `[3000, 3001]` → `{"3000": "", "3001": ""}`
 
 ### Multiple Servers + Background Color
 ```json
@@ -100,14 +102,14 @@ The extension uses a 4-step intelligent processing system:
   "portMonitor.hosts": {
     "localhost": {
       "Frontend": {
-        3000: "frontend",
-        3001: "backend"
+        "3000": "frontend",
+        "3001": "backend"
       }
     },
     "db-server": {
       "Database": {
-        5432: "postgres",
-        6379: "redis"
+        "5432": "postgres",
+        "6379": "redis"
       }
     }
   },
@@ -166,13 +168,13 @@ The extension uses a 4-step intelligent processing system:
   "portMonitor.hosts": {
     "localhost": {
       "Frontend": {
-        3000: "react",
-        6006: "storybook",
-        8080: "webpack"
+        "3000": "react",
+        "6006": "storybook",
+        "8080": "webpack"
       },
       "Backend": {
-        3001: "node",
-        3002: "api"
+        "3001": "node",
+        "3002": "api"
       }
     }
   }
@@ -228,9 +230,9 @@ The extension uses a 4-step intelligent processing system:
   "portMonitor.hosts": {
     "localhost": {
       "Applications": {
-        3000: "app",
-        3001: "api",
-        5432: "db"
+        "3000": "app",
+        "3001": "api",
+        "5432": "db"
       }
     },
     "production.example.com": {

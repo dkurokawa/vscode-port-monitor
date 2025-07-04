@@ -13,6 +13,8 @@ Comparison with existing VS Code extensions:
 | `njzy.stats-bar` | System statistics display | Network speed only, no port monitoring |
 
 ### Unique Value
+- ✅ **Intelligent configuration processing** - 4-step automatic transformation of any input format
+- ✅ **Zero external dependencies** - Native Node.js implementation for better security
 - ✅ **Multiple host/port simultaneous monitoring** - Feature not available in existing extensions
 - ✅ **Real-time status display** - Continuous monitoring in status bar
 - ✅ **Port labeling feature** - Management with human-readable names
@@ -31,13 +33,13 @@ Comparison with existing VS Code extensions:
   - Number: `3000`
   - Range: `"3000-3009"`
   - Well-known names: `"http"`, `"https"`, `"ssh"`, `"postgresql"`, etc.
-- **Automatic Configuration Processing**: 4-step intelligent transformation:
-  1. Well-known ports replacement (`"http"` → `80`)
-  2. Default grouping (simple arrays get `"__NOTITLE"` wrapper)
-  3. Range expansion (`"3002-3009"` → individual ports)
-  4. Array to object conversion (`[3000, 3001]` → `{3000: "", 3001: ""}`)
+- **Intelligent Configuration Processing**: 4-step automatic transformation:
+  1. **Well-known ports replacement**: `"http"` → `80`, `"https"` → `443`, etc.
+  2. **Smart default grouping**: Simple arrays get `"__NOTITLE"` wrapper for organization
+  3. **Port range expansion**: `"3002-3009"` → individual ports `3002, 3003, 3004...`
+  4. **Array normalization**: `[3000, 3001]` → `{"3000": "", "3001": ""}` for consistent processing
 - Port labeling:
-  - Direct assignment in grouped format: `{3000: "app", 3001: "api"}`
+  - Direct assignment in grouped format: `{"3000": "app", "3001": "api"}`
   - Pattern-based via `portLabels`: `{"300*": "dev-env"}`
   - Displayed as `label:port_suffix` format
 
@@ -173,8 +175,8 @@ The following patterns are available in `portMonitor.portLabels`:
   "portMonitor.hosts": {
     "localhost": {
       "Applications": {
-        3000: "user",
-        3001: "car",
+        "3000": "user",
+        "3001": "car",
         "3002-3004": "services"
       }
     }
@@ -293,15 +295,15 @@ vscode-port-monitor/
 └── README.md
 ```
 
-### Implementation Tasks
-- [ ] `config.ts`: Configuration loading & validation (including port label feature)
-- [ ] `portRange.ts`: Port range & name resolution ("3000-3005", "http" → [80,3000,3001,...,3005])
-- [ ] `monitor.ts`: Status check using tcp-port-used (host + port)
-- [ ] `extension.ts`: Status bar display (aggregate by host, support label display)
-- [ ] `labelResolver.ts`: Port label resolution (port number → display name conversion, pattern matching support)
-- [ ] `patternMatcher.ts`: Glob pattern matching functionality
-- [ ] `processManager.ts`: Process kill functionality (PID search, safe termination)
-- [ ] `logViewer.ts`: Process log display (stdout/stderr real-time display)
-- [ ] `processTracker.ts`: Process tracking & monitoring (PID → process details)
-- [ ] `menuProvider.ts`: Context menu functionality
-- [ ] Extension build, `.vsix` generation, signing process (optional)
+### Implementation Status (v0.3.3)
+- ✅ **`config.ts`**: Complete 4-step configuration processing & validation
+- ✅ **`monitor.ts`**: Native Node.js port checking (zero dependencies)
+- ✅ **`extension.ts`**: Status bar display with intelligent grouping
+- ✅ **`labelResolver.ts`**: Pattern-based port label resolution
+- ✅ **`patternMatcher.ts`**: Glob pattern matching functionality
+- 🚧 **`processManager.ts`**: Process kill functionality (basic implementation)
+- 🚧 **`logViewer.ts`**: Process log display (basic implementation)
+- 📋 **Future enhancements**:
+  - Advanced process tracking & monitoring
+  - Enhanced context menu functionality
+  - VS Code Marketplace publication

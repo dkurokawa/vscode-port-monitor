@@ -2,7 +2,11 @@
 
 Comprehensive examples of port monitoring configurations for different development environments. 
 
-**Note**: All configurations use the new intelligent processing system that automatically handles well-known port names, port ranges, and different configuration formats.
+**Note**: All configurations use the v0.3.3 intelligent processing system with 4-step automatic transformation:
+1. **Well-known ports**: `"http"` → `80`, `"https"` → `443`, `"postgresql"` → `5432`, etc.
+2. **Smart grouping**: Simple arrays get organized automatically
+3. **Range expansion**: `"3000-3009"` → individual ports `3000, 3001, 3002...`
+4. **Format normalization**: All formats converted to consistent internal structure
 
 ## 📋 Port Usage Patterns by Development Environment
 
@@ -61,11 +65,12 @@ Comprehensive examples of port monitoring configurations for different developme
 
 ## 🔧 Sample Configuration Files
 
-**Configuration Features:**
+**Configuration Features (v0.3.3):**
+- **Zero dependencies**: Native Node.js implementation for better security and performance
 - **Well-known port names**: Use `"http"`, `"https"`, `"ssh"`, `"postgresql"`, etc. automatically converted to port numbers
 - **Port ranges**: `"3000-3009"` automatically expands to individual ports 3000, 3001, 3002... 3009
 - **Multiple formats**: Simple arrays, grouped configurations, and mixed formats all supported
-- **Smart processing**: All configurations are automatically normalized for consistent behavior
+- **Intelligent processing**: 4-step automatic transformation handles any configuration format
 
 ### 1. Next.js Development (Multiple Instances)
 ```json
@@ -73,10 +78,10 @@ Comprehensive examples of port monitoring configurations for different developme
   "portMonitor.hosts": {
     "localhost": {
       "Next.js": {
-        3000: "Main App",
-        3001: "Admin Panel",
-        3002: "Storybook",
-        3003: "API Docs",
+        "3000": "Main App",
+        "3001": "Admin Panel",
+        "3002": "Storybook",
+        "3003": "API Docs",
         "3004-3009": "Feature Branches"
       }
     }
@@ -112,18 +117,18 @@ Comprehensive examples of port monitoring configurations for different developme
   "portMonitor.hosts": {
     "localhost": {
       "Frontend": {
-        3000: "React App",
-        3001: "Admin Dashboard",
-        6006: "Storybook"
+        "3000": "React App",
+        "3001": "Admin Dashboard",
+        "6006": "Storybook"
       },
       "Backend": {
-        5000: "Express API",
-        5001: "Auth Service",
-        4000: "GraphQL"
+        "5000": "Express API",
+        "5001": "Auth Service",
+        "4000": "GraphQL"
       },
       "Database": {
-        27017: "MongoDB",
-        6379: "Redis"
+        "27017": "MongoDB",
+        "6379": "Redis"
       }
     }
   }

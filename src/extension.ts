@@ -14,7 +14,11 @@ export class PortMonitorExtension {
             console.log('Initializing PortMonitorExtension...');
             this.monitor = new PortMonitor();
             this.configManager = ConfigManager.getInstance();
-            this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 200);
+            
+            // Get initial configuration for status bar position
+            const initialConfig = this.configManager.getConfig();
+            const alignment = initialConfig.statusBarPosition === 'left' ? vscode.StatusBarAlignment.Left : vscode.StatusBarAlignment.Right;
+            this.statusBarItem = vscode.window.createStatusBarItem(alignment, 200);
             this.statusBarItem.command = 'portMonitor.refresh';
             this.statusBarItem.show();
             
@@ -80,6 +84,23 @@ export class PortMonitorExtension {
 
         // Get processed configuration
         const config = this.configManager.getConfig();
+        
+        // Check if status bar position changed and recreate if necessary
+        const currentAlignment = this.statusBarItem.alignment;
+        const newAlignment = config.statusBarPosition === 'left' ? vscode.StatusBarAlignment.Left : vscode.StatusBarAlignment.Right;
+        
+        if (currentAlignment !== newAlignment) {
+            // Dispose current status bar item and create new one with correct alignment
+            const currentText = this.statusBarItem.text;
+            const currentTooltip = this.statusBarItem.tooltip;
+            this.statusBarItem.dispose();
+            
+            this.statusBarItem = vscode.window.createStatusBarItem(newAlignment, 200);
+            this.statusBarItem.command = 'portMonitor.refresh';
+            this.statusBarItem.text = currentText;
+            this.statusBarItem.tooltip = currentTooltip;
+            this.statusBarItem.show();
+        }
 
         // Stop current monitoring
         if (this.currentMonitorId) {
@@ -90,8 +111,17 @@ export class PortMonitorExtension {
         const hostConfigs = ConfigManager.parseHostsConfig(config);
 
         if (hostConfigs.length === 0) {
-            this.statusBarItem.text = "Port Monitor: No ports configured";
-            this.statusBarItem.tooltip = "Click to open settings";
+            // Check if there are configuration errors to show helpful messages
+            const rawConfig = vscode.workspace.getConfiguration('portMonitor');
+            const structureErrors = ConfigManager.validateHostsStructure(rawConfig.get('hosts') || {});
+            
+            if (structureErrors.length > 0) {
+                this.statusBarItem.text = "Port Monitor: Configuration Error";
+                this.statusBarItem.tooltip = `Configuration Issues:\n${structureErrors.join('\n')}\n\nClick to open settings`;
+            } else {
+                this.statusBarItem.text = "Port Monitor: No ports configured";
+                this.statusBarItem.tooltip = "Add ports to monitor in settings.\nExample: {\"localhost\": {\"3000\": \"app\", \"3001\": \"api\"}}\n\nClick to open settings";
+            }
             return;
         }
 
@@ -104,28 +134,42 @@ export class PortMonitorExtension {
     }
 
     private onPortStatusChanged(results: PortInfo[], config: PortMonitorConfig): void {
-        // Group by host and then by config groups for better organization
+        // Group by host and then by group for better organization
         const hostGroups = results.reduce((acc, port) => {
             if (!acc[port.host]) {
-                acc[port.host] = [];
+                acc[port.host] = {};
             }
-            acc[port.host].push(port);
+            if (!acc[port.host][port.group]) {
+                acc[port.host][port.group] = [];
+            }
+            acc[port.host][port.group].push(port);
             return acc;
-        }, {} as Record<string, PortInfo[]>);
+        }, {} as Record<string, Record<string, PortInfo[]>>);
 
         // Generate display text using group information from config
         const hostDisplays: string[] = [];
 
-        for (const [host, ports] of Object.entries(hostGroups)) {
-            const portDisplays = ports.map(port => {
-                const icon = port.isOpen ? config.statusIcons.inUse : config.statusIcons.free;
-                return `${icon}${port.label}:${port.port}`;
-            });
+        for (const [host, groups] of Object.entries(hostGroups)) {
+            const groupDisplays: string[] = [];
+            
+            for (const [groupName, ports] of Object.entries(groups)) {
+                const portDisplays = ports.map(port => {
+                    const icon = port.isOpen ? config.statusIcons.inUse : config.statusIcons.free;
+                    return `${icon}${port.label}:${port.port}`;
+                });
+                
+                // Don't show __NOTITLE-prefixed or empty group names, but show others
+                if (groupName.startsWith('__NOTITLE') || groupName === '') {
+                    groupDisplays.push(portDisplays.join(' '));
+                } else {
+                    groupDisplays.push(`${groupName}:[${portDisplays.join('|')}]`);
+                }
+            }
             
             if (host === 'localhost') {
-                hostDisplays.push(`[${portDisplays.join('|')}]`);
+                hostDisplays.push(groupDisplays.join(' '));
             } else {
-                hostDisplays.push(`${host}:[${portDisplays.join('|')}]`);
+                hostDisplays.push(`${host}:${groupDisplays.join(' ')}`);
             }
         }
 

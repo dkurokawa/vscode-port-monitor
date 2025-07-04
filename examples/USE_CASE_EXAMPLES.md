@@ -2,7 +2,7 @@
 
 Specific configuration examples tailored to real development scenarios.
 
-**Note**: All examples showcase the new intelligent configuration processing that automatically handles well-known port names, port ranges, and multiple configuration formats.
+**Note**: All examples showcase the v0.3.3 intelligent configuration processing with 4-step transformation that automatically handles well-known port names, port ranges, and multiple configuration formats with zero external dependencies.
 
 ## 🎯 Practical Use Cases
 
@@ -12,9 +12,9 @@ Specific configuration examples tailored to real development scenarios.
   "portMonitor.hosts": {
     "localhost": {
       "Frontend": {
-        3000: "Customer App",
-        3001: "Admin Panel", 
-        3002: "Landing Page"
+        "3000": "Customer App",
+        "3001": "Admin Panel", 
+        "3002": "Landing Page"
       },
       "Microservices": {
         "8001-8004": "APIs"

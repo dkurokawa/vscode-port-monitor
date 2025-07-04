@@ -2,10 +2,10 @@
 
 ## Generated Files
 
-✅ **VSIX package has been successfully created!**
-- File name: `vscode-port-monitor-0.1.0.vsix`
-- Size: 31.95 KB (optimized)
-- Files included: 15 files (only necessary files)
+✅ **VSIX package ready for installation!**
+- Current version: `vscode-port-monitor-0.3.3.vsix`
+- Features: Zero dependencies, 4-step intelligent configuration processing
+- Files included: Core functionality only (optimized for performance)
 
 ## Extension Testing Methods
 
@@ -18,18 +18,18 @@
 ### Method 2: Direct installation from VSIX file (Can be used in other projects)
 1. Open VS Code
 2. Run "Extensions: Install from VSIX" from Command Palette (Cmd+Shift+P)
-3. Select the `vscode-port-monitor-0.1.0.vsix` file
+3. Select the `vscode-port-monitor-0.3.3.vsix` file
 4. The extension will be installed
 
 **✅ With this method, you can use it immediately in other projects!**
 
 ### Method 3: VS Code Command Line (if code command is available)
 ```bash
-code --install-extension vscode-port-monitor-0.1.0.vsix
+code --install-extension vscode-port-monitor-0.3.3.vsix
 ```
 
 ### 🚀 How to use in other projects
-1. **Copy VSIX file**: Copy `vscode-port-monitor-0.1.0.vsix` to other project folders
+1. **Copy VSIX file**: Copy `vscode-port-monitor-0.3.3.vsix` to other project folders
 2. **Install from VSIX**: Install using Method 2 above
 3. **Add configuration**: Add settings to each project's `settings.json`
 4. **Start using immediately**: Port monitoring will start in the status bar
@@ -38,21 +38,15 @@ code --install-extension vscode-port-monitor-0.1.0.vsix
 
 ## Test Configuration Examples
 
-### Next.js Development Environment (Recommended)
+### Next.js Development Environment (v0.3.3 - Intelligent Processing)
 Add the following to your settings file (settings.json):
 
 ```json
 {
   "portMonitor.hosts": {
-    "Next.js Development": {
-      "localhost": [3000, 3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009]
-    },
-    "Database": {
-      "localhost": [5432, 6379, 27017]
-    },
-    "Testing Tools": {
-      "localhost": [6006, 4000, 8080]
-    }
+    "Next.js Development": ["3000-3009"],
+    "Database": ["postgresql", "redis", "mongodb"],
+    "Testing Tools": [6006, 4000, 8080]
   },
   "portMonitor.portLabels": {
     "3000": "Next.js Main",

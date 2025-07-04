@@ -1,6 +1,6 @@
-# Port Monitor - Development Test Settings
+# Port Monitor - Development Test Settings (v0.3.3)
 
-This is a test configuration example for the VS Code extension.
+Test configuration examples showcasing the new 4-step intelligent configuration processing with zero dependencies.
 
 ## Expected Display Examples
 
@@ -28,17 +28,18 @@ localhost:30[🟢main:00|🟢dev:01|🔴4000]
 ### When There is No Common Prefix
 ```
 localhost:[🟢main:3000|🟢dev:3001|🔴8080|🔴9000]
-```## Basic Format (Simple Array)
+```## Basic Format (Simple Array - v0.3.3)
 ```json
 {
   "portMonitor.hosts": {
-    "localhost": [3000, 3001, "3002-3005", "http", "https"],
-    "127.0.0.1": ["ssh", "postgresql"]
+    "Development": [3000, 3001, "3002-3005", "http", "https"],
+    "Services": ["ssh", "postgresql"]
   }
 }
 ```
+**Note**: Simple arrays automatically get wrapped with "__NOTITLE" group during processing.
 
-### Category-Based Format (New Feature)
+### Category-Based Format (v0.3.3 - Intelligent Processing)
 ```json
 {
   "portMonitor.hosts": {
@@ -54,7 +55,7 @@ localhost:[🟢main:3000|🟢dev:3001|🔴8080|🔴9000]
 }
 ```
 
-### Mixed Format (Supports Both)
+### Mixed Format (v0.3.3 - All Formats Supported)
 ```json
 {
   "portMonitor.hosts": {

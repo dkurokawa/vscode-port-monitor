@@ -91,10 +91,29 @@ describe('ConfigManager', () => {
     
     const result = ConfigManager.parseHostsConfig(config);
     expect(result).toEqual([
-      { host: 'localhost', port: 3000, label: 'app' },
-      { host: 'localhost', port: 3001, label: 'api' },
-      { host: 'localhost', port: 22, label: 'ssh' },
-      { host: 'localhost', port: 80, label: 'http' }
+      { host: 'localhost', port: 3000, label: 'app', group: 'Next.js' },
+      { host: 'localhost', port: 3001, label: 'api', group: 'Next.js' },
+      { host: 'localhost', port: 22, label: 'ssh', group: 'Services' },
+      { host: 'localhost', port: 80, label: 'http', group: 'Services' }
     ]);
+  });
+
+  it('should process direct port mapping format', () => {
+    const rawConfig = {
+      "3000": "user",
+      "3001": "car", 
+      "3007": "ai-cam"
+    };
+    
+    const processed = ConfigManager.processHostsConfig(rawConfig);
+    expect(processed).toEqual({
+      "localhost": {
+        "__NOTITLE": {
+          "3000": "user",
+          "3001": "car",
+          "3007": "ai-cam"
+        }
+      }
+    });
   });
 });

@@ -12,15 +12,17 @@ export class PortMonitor {
      * @param host Host name
      * @param port Port number
      * @param label Port label
+     * @param group Group name
      * @returns PortInfo
      */
-    public async checkPort(host: string, port: number, label: string): Promise<PortInfo> {
+    public async checkPort(host: string, port: number, label: string, group: string): Promise<PortInfo> {
         try {
             const isOpen = await this.isPortOpen(host, port);
             const portInfo: PortInfo = {
                 host,
                 port,
                 label,
+                group,
                 isOpen
             };
 
@@ -40,6 +42,7 @@ export class PortMonitor {
                 host,
                 port,
                 label,
+                group,
                 isOpen: false
             };
         }
@@ -50,9 +53,9 @@ export class PortMonitor {
      * @param portConfigs Array of port configurations
      * @returns Array of PortInfo
      */
-    public async checkMultiplePorts(portConfigs: Array<{host: string; port: number; label: string}>): Promise<PortInfo[]> {
+    public async checkMultiplePorts(portConfigs: Array<{host: string; port: number; label: string; group: string}>): Promise<PortInfo[]> {
         const promises = portConfigs.map(config => 
-            this.checkPort(config.host, config.port, config.label)
+            this.checkPort(config.host, config.port, config.label, config.group)
         );
         return Promise.all(promises);
     }
@@ -65,7 +68,7 @@ export class PortMonitor {
      * @returns Monitoring ID
      */
     public async startMonitoring(
-        portConfigs: Array<{host: string; port: number; label: string}>,
+        portConfigs: Array<{host: string; port: number; label: string; group: string}>,
         intervalMs: number,
         callback: (results: PortInfo[]) => void
     ): Promise<string> {
