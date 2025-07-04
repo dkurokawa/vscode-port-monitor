@@ -5,8 +5,21 @@ export type HostsSimple = Record<string, Record<string, number>>;
 export type HostsCustom = Record<string, (number | string)[]>;
 export type ProcessedHosts = Record<string, Record<string, Record<number, string>>>;
 
+export interface GroupSettings {
+    [key: string]: any;
+}
+
+export interface GroupConfigs {
+    compact?: boolean;
+    bgcolor?: string;
+    separator?: string;
+    show_title?: boolean;
+}
+
+export type ProcessedHostsWithSettings = Record<string, GroupSettings & GroupConfigs>;
+
 export interface PortMonitorConfig {
-    hosts: ProcessedHosts;
+    hosts: ProcessedHostsWithSettings;
     portLabels?: Record<string, string>;
     statusIcons: {
         inUse: string;
@@ -23,6 +36,7 @@ export interface PortInfo {
     port: number;
     label: string;
     group: string;
+    groupConfigs?: GroupConfigs;
     isOpen: boolean;
     pid?: number;
     processName?: string;
@@ -239,29 +253,63 @@ Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
     /**
      * Generate monitoring target list from processed hosts config
      * @param config PortMonitorConfig
-     * @returns Array<{host, port, label, group}>
+     * @returns Array<{host, port, label, group, groupConfigs}>
      */
-    public static parseHostsConfig(config: PortMonitorConfig): Array<{ host: string; port: number; label: string; group: string }> {
-        const result: Array<{ host: string; port: number; label: string; group: string }> = [];
+    public static parseHostsConfig(config: PortMonitorConfig): Array<{ host: string; port: number; label: string; group: string; groupConfigs?: GroupConfigs }> {
+        const result: Array<{ host: string; port: number; label: string; group: string; groupConfigs?: GroupConfigs }> = [];
+        
+        // Default group config values
+        const defaultGroupConfigs: GroupConfigs = {
+            compact: false,
+            separator: '|',
+            show_title: true
+        };
         
         // Process the already-transformed hosts config
-        for (const [host, groups] of Object.entries(config.hosts)) {
-            for (const [groupName, ports] of Object.entries(groups)) {
-                for (const [portStr, label] of Object.entries(ports)) {
-                    const port = parseInt(portStr);
-                    if (!isNaN(port) && port > 0 && port <= 65535) {
-                        result.push({
-                            host,
-                            port,
-                            label: label || ConfigManager.resolveLabelForPort(port, config.portLabels || {}),
-                            group: groupName
-                        });
-                    }
-                }
-            }
+        for (const [groupName, groupData] of Object.entries(config.hosts)) {
+            ConfigManager.processGroupData(groupName, groupData, defaultGroupConfigs, result, config.portLabels || {});
         }
         
         return result;
+    }
+    
+    private static processGroupData(groupName: string, groupData: any, defaultGroupConfigs: GroupConfigs, result: Array<{ host: string; port: number; label: string; group: string; groupConfigs?: GroupConfigs }>, portLabels: Record<string, string>) {
+        // Check if this is a nested structure (like __NOTITLE with sub-groups)
+        const hasNestedGroups = Object.values(groupData).some(value => 
+            typeof value === 'object' && value !== null && !Array.isArray(value) &&
+            Object.keys(value).some(key => {
+                const port = parseInt(key);
+                return !isNaN(port) && port > 0 && port <= 65535;
+            })
+        );
+        
+        if (hasNestedGroups && groupName === '__NOTITLE') {
+            // Handle nested groups under __NOTITLE
+            for (const [subGroupName, subGroupData] of Object.entries(groupData)) {
+                if (!subGroupName.startsWith('__')) {
+                    ConfigManager.processGroupData(subGroupName, subGroupData, defaultGroupConfigs, result, portLabels);
+                }
+            }
+        } else {
+            // Handle direct port mapping
+            const groupConfigs = { ...defaultGroupConfigs, ...(groupData as any).__CONFIG };
+            
+            // Get port entries (all keys except those starting with __)
+            const portEntries = Object.entries(groupData).filter(([key]) => !key.startsWith('__'));
+            
+            for (const [portStr, label] of portEntries) {
+                const port = parseInt(portStr);
+                if (!isNaN(port) && port > 0 && port <= 65535) {
+                    result.push({
+                        host: 'localhost', // All ports are assumed to be on localhost
+                        port,
+                        label: (typeof label === 'string' ? label : '') || ConfigManager.resolveLabelForPort(port, portLabels),
+                        group: groupName,
+                        groupConfigs
+                    });
+                }
+            }
+        }
     }
 
     /**
@@ -293,7 +341,7 @@ Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
     /**
      * Process hosts configuration through 4-step transformation
      */
-    public static processHostsConfig(rawHosts: any): Record<string, Record<string, Record<number, string>>> {
+    public static processHostsConfig(rawHosts: any): ProcessedHostsWithSettings {
         // Well-known ports mapping
         const wellKnownPorts: Record<string, number> = {
             'http': 80,
@@ -301,6 +349,9 @@ Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
             'ssh': 22,
             'postgresql': 5432,
             'mysql': 3306,
+            'redis': 6379,
+            'mongodb': 27017,
+            'elasticsearch': 9200,
             'ftp': 21,
             'smtp': 25,
             'pop3': 110,
@@ -333,14 +384,22 @@ Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
 
     private static replaceWellKnownPorts(config: any, wellKnownPorts: Record<string, number>): any {
         if (Array.isArray(config)) {
-            // For arrays, check if all items are well-known ports that should be converted to object
+            // For arrays, check if all items are well-known ports or port numbers
             const hasWellKnownPorts = config.some(item => typeof item === 'string' && wellKnownPorts[item]);
-            if (hasWellKnownPorts && config.every(item => typeof item === 'string' && wellKnownPorts[item])) {
-                // Convert array of only well-known ports to port-label object
-                const portObject: Record<number, string> = {};
+            if (hasWellKnownPorts && config.every(item => 
+                (typeof item === 'string' && wellKnownPorts[item]) || 
+                (typeof item === 'string' && /^\d+$/.test(item)) ||
+                typeof item === 'number'
+            )) {
+                // Convert array of well-known ports and numbers to port-label object
+                const portObject: Record<string, string> = {};
                 for (const item of config) {
                     if (typeof item === 'string' && wellKnownPorts[item]) {
-                        portObject[wellKnownPorts[item]] = item;
+                        portObject[wellKnownPorts[item].toString()] = item;
+                    } else if (typeof item === 'string' && /^\d+$/.test(item)) {
+                        portObject[item] = '';
+                    } else if (typeof item === 'number') {
+                        portObject[item.toString()] = '';
                     }
                 }
                 return portObject;
@@ -364,6 +423,11 @@ Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
     }
 
     private static addDefaultGroupWrapper(config: any): any {
+        // Handle empty config
+        if (!config || Object.keys(config).length === 0) {
+            return {};
+        }
+        
         // Check if config is a direct port-label mapping at top level
         const isDirectPortMapping = Object.keys(config).every(key => {
             const num = parseInt(key);
@@ -372,11 +436,9 @@ Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
         
         if (isDirectPortMapping) {
             // Direct port mapping: {"3000": "user", "3001": "car"}
-            // Convert to: {"localhost": {"__NOTITLE": {"3000": "user", "3001": "car"}}}
+            // Convert to: {"__NOTITLE": {"3000": "user", "3001": "car"}}
             return {
-                "localhost": {
-                    "__NOTITLE": config
-                }
+                "__NOTITLE": config
             };
         }
         
@@ -388,28 +450,12 @@ Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
             config = newConfig;
         }
         
-        // Check if config needs group wrapper by examining if values are arrays or simple port objects
-        const needsWrapper = Object.values(config).some(value => {
-            if (Array.isArray(value)) {
-                return true;
-            }
-            // Check if value is a simple port-label object (all keys are port numbers)
-            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-                const keys = Object.keys(value);
-                const allKeysArePortNumbers = keys.every(key => {
-                    const num = parseInt(key);
-                    return !isNaN(num) && num > 0 && num <= 65535;
-                });
-                return allKeysArePortNumbers;
-            }
-            return false;
-        });
+        // Check if config needs group wrapper by examining if values are arrays
+        const needsWrapper = Object.values(config).some(value => Array.isArray(value));
         
         if (needsWrapper) {
             return {
-                "localhost": {
-                    "__NOTITLE": config
-                }
+                "__NOTITLE": config
             };
         }
         
@@ -457,7 +503,7 @@ Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
         }
 
         if (Array.isArray(config)) {
-            // Convert array to port-label object
+            // Convert array to direct port-label mapping
             const portObject: Record<number, string> = {};
             for (const item of config) {
                 if (typeof item === 'number') {
@@ -472,7 +518,7 @@ Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
         const result: any = {};
         for (const [key, value] of Object.entries(config)) {
             if (Array.isArray(value)) {
-                // Convert array to port-label object, preserving non-port properties
+                // Convert array to direct port-label mapping
                 const portObject: Record<number, string> = {};
                 for (const item of value) {
                     if (typeof item === 'number') {
@@ -483,22 +529,8 @@ Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
                 }
                 result[key] = portObject;
             } else if (typeof value === 'object' && value !== null) {
-                // For objects, filter out non-port properties and recurse on nested objects
-                const processedValue: any = {};
-                for (const [subKey, subValue] of Object.entries(value)) {
-                    if (typeof subValue === 'object' || Array.isArray(subValue)) {
-                        processedValue[subKey] = ConfigManager.convertPortArraysToObjects(subValue);
-                    } else if (typeof subValue === 'string' || typeof subValue === 'number') {
-                        // Keep port-label pairs and other simple values
-                        const portNum = parseInt(subKey);
-                        if (!isNaN(portNum) && portNum > 0 && portNum <= 65535) {
-                            processedValue[portNum] = subValue;
-                        } else if (subKey !== 'bgcolor') { // Skip non-port properties like bgcolor
-                            processedValue[subKey] = subValue;
-                        }
-                    }
-                }
-                result[key] = processedValue;
+                // Process nested objects recursively
+                result[key] = ConfigManager.convertPortArraysToObjects(value);
             } else {
                 result[key] = value;
             }

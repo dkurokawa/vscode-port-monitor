@@ -125,6 +125,7 @@ Comparison with existing VS Code extensions:
 | `portMonitor.displayOptions.separator` | String | Separator character between ports | `"|"` |
 | `portMonitor.displayOptions.showFullPortNumber` | Boolean | Show full port numbers | `false` |
 | `portMonitor.displayOptions.compactRanges` | Boolean | Compact range display (3000-3009→300[0-9]) | `true` |
+| `portMonitor.statusBarPosition` | String | Status bar position ("left" or "right") | `"right"` |
 
 ### Port Label Pattern Matching
 The following patterns are available in `portMonitor.portLabels`:
@@ -295,12 +296,60 @@ vscode-port-monitor/
 └── README.md
 ```
 
-### Implementation Status (v0.3.3)
-- ✅ **`config.ts`**: Complete 4-step configuration processing & validation
+## 🔧 Configuration Validation & Error Detection
+
+### Smart Error Detection (v0.3.5)
+
+The extension provides comprehensive configuration validation with helpful error messages:
+
+#### Common Configuration Errors Detected
+
+1. **Reversed Port-Label Configuration**
+   - **Detection**: Values are port numbers instead of keys
+   - **Error**: `Port numbers should be keys, not values. Current: {"user": 3000} Correct: {"3000": "user"}`
+
+2. **Empty Host Name**
+   - **Detection**: Host key is empty string `""`
+   - **Error**: `Empty host name detected. Use "localhost" instead of ""`
+   - **Auto-fix**: Automatically converts empty hosts to `"localhost"`
+
+3. **Host Name as Port Number**
+   - **Detection**: Host name looks like a port number
+   - **Error**: `Host "3000": Host name looks like a port number. Use "localhost" or proper hostname`
+
+4. **Mixed Configuration Format**
+   - **Detection**: Both port-as-key and port-as-value in same configuration
+   - **Error**: `Mixed configuration detected. Use consistent format`
+
+5. **Invalid Port Range Syntax**
+   - **Detection**: Port ranges in wrong format or location
+   - **Error**: `Port range "3000-3005" detected. Use array format: {"group": ["3000-3005"]}`
+
+#### Error Display
+- **Status Bar**: Shows "Port Monitor: Configuration Error" when errors detected
+- **Tooltip**: Displays detailed error messages with fix suggestions
+- **Examples**: Provides correct configuration format for each error type
+
+### Status Bar Positioning
+
+Configure status bar position:
+```json
+{
+  "portMonitor.statusBarPosition": "left"  // or "right" (default)
+}
+```
+
+Changes take effect immediately without requiring VS Code restart.
+
+### Implementation Status (v0.3.5)
+- ✅ **`config.ts`**: Enhanced configuration processing with detailed validation
 - ✅ **`monitor.ts`**: Native Node.js port checking (zero dependencies)
-- ✅ **`extension.ts`**: Status bar display with intelligent grouping
+- ✅ **`extension.ts`**: Status bar display with error handling and positioning
 - ✅ **`labelResolver.ts`**: Pattern-based port label resolution
 - ✅ **`patternMatcher.ts`**: Glob pattern matching functionality
+- ✅ **Configuration validation**: Smart error detection with helpful messages
+- ✅ **Status bar positioning**: Configurable left/right alignment
+- ✅ **Group name handling**: Hide `__NOTITLE` prefixed group names
 - 🚧 **`processManager.ts`**: Process kill functionality (basic implementation)
 - 🚧 **`logViewer.ts`**: Process log display (basic implementation)
 - 📋 **Future enhancements**:

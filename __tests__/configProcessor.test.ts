@@ -8,11 +8,9 @@ describe('ConfigManager.processHostsConfig', () => {
             };
             const result = ConfigManager.processHostsConfig(input);
             expect(result).toEqual({
-                "__NOTITLE": {
-                    "Web": {
-                        80: "http",
-                        443: "https"
-                    }
+                "Web": {
+                    80: "http",
+                    443: "https"
                 }
             });
         });

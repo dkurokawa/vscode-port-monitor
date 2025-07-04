@@ -2,7 +2,7 @@
 
 Specific configuration examples tailored to real development scenarios.
 
-**Note**: All examples showcase the v0.3.3 intelligent configuration processing with 4-step transformation that automatically handles well-known port names, port ranges, and multiple configuration formats with zero external dependencies.
+**Note**: All examples showcase the v0.3.5 intelligent configuration processing with smart error detection, 4-step transformation that automatically handles well-known port names, port ranges, and multiple configuration formats with zero external dependencies.
 
 ## 🎯 Practical Use Cases
 
@@ -39,7 +39,8 @@ Specific configuration examples tailored to real development scenarios.
     "separator": " | ",
     "compactRanges": true,
     "maxDisplayLength": 180
-  }
+  },
+  "portMonitor.statusBarPosition": "right"
 }
 ```
 
@@ -415,3 +416,150 @@ Specific configuration examples tailored to real development scenarios.
   }
 }
 ```
+
+## ⚠️ Common Configuration Mistakes & Solutions (v0.3.5)
+
+### Mistake 1: Reversed Port-Label Configuration
+
+❌ **Incorrect Configuration:**
+```json
+{
+  "portMonitor.hosts": {
+    "localhost": {
+      "frontend": 3000,
+      "backend": 3001,
+      "database": 5432
+    }
+  }
+}
+```
+
+**Error Message**: `Port numbers should be keys, not values. Current: {"frontend": 3000} Correct: {"3000": "frontend"}`
+
+✅ **Correct Configuration:**
+```json
+{
+  "portMonitor.hosts": {
+    "localhost": {
+      "3000": "frontend",
+      "3001": "backend", 
+      "5432": "database"
+    }
+  }
+}
+```
+
+### Mistake 2: Empty Host Name
+
+❌ **Incorrect Configuration:**
+```json
+{
+  "portMonitor.hosts": {
+    "": {
+      "Development": {
+        "3000": "app",
+        "3001": "api"
+      }
+    }
+  }
+}
+```
+
+**Error Message**: `Empty host name detected. Use "localhost" instead of ""`
+
+✅ **Correct Configuration:**
+```json
+{
+  "portMonitor.hosts": {
+    "localhost": {
+      "Development": {
+        "3000": "app",
+        "3001": "api"
+      }
+    }
+  }
+}
+```
+
+### Mistake 3: Host Name as Port Number
+
+❌ **Incorrect Configuration:**
+```json
+{
+  "portMonitor.hosts": {
+    "3000": {
+      "app": "main"
+    },
+    "3001": {
+      "api": "backend"
+    }
+  }
+}
+```
+
+**Error Message**: `Host "3000": Host name looks like a port number. Use "localhost" or proper hostname`
+
+✅ **Correct Configuration:**
+```json
+{
+  "portMonitor.hosts": {
+    "localhost": {
+      "3000": "app",
+      "3001": "api"
+    }
+  }
+}
+```
+
+### Mistake 4: Mixed Configuration Format
+
+❌ **Incorrect Configuration:**
+```json
+{
+  "portMonitor.hosts": {
+    "localhost": {
+      "3000": "app",      // Port as key (correct)
+      "api": 3001,        // Port as value (incorrect)
+      "5432": "database"  // Port as key (correct)
+    }
+  }
+}
+```
+
+**Error Message**: `Mixed configuration detected. Use consistent format: {"3000": "label", "3001": "label"}`
+
+✅ **Correct Configuration:**
+```json
+{
+  "portMonitor.hosts": {
+    "localhost": {
+      "3000": "app",
+      "3001": "api", 
+      "5432": "database"
+    }
+  }
+}
+```
+
+### How Error Detection Helps
+
+1. **Real-time Validation**: Errors are detected as you edit settings
+2. **Specific Messages**: Each error shows exactly what's wrong and how to fix it
+3. **Status Bar Indicator**: "Configuration Error" appears when issues are found
+4. **Tooltip Details**: Hover over status bar for detailed error information
+5. **Example Solutions**: Each error message includes correct format examples
+
+### Status Bar Positioning (New in v0.3.5)
+
+All configurations now support status bar positioning:
+
+```json
+{
+  "portMonitor.statusBarPosition": "left"  // or "right" (default)
+}
+```
+
+This setting:
+- Takes effect immediately without restart
+- Applies to all monitoring configurations
+- Allows better integration with other extensions

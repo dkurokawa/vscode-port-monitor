@@ -3,8 +3,8 @@
 ## Generated Files
 
 ✅ **VSIX package ready for installation!**
-- Current version: `vscode-port-monitor-0.3.3.vsix`
-- Features: Zero dependencies, 4-step intelligent configuration processing
+- Current version: `vscode-port-monitor-0.3.5.vsix`
+- Features: Zero dependencies, 4-step intelligent configuration processing, smart error detection
 - Files included: Core functionality only (optimized for performance)
 
 ## Extension Testing Methods
@@ -18,18 +18,18 @@
 ### Method 2: Direct installation from VSIX file (Can be used in other projects)
 1. Open VS Code
 2. Run "Extensions: Install from VSIX" from Command Palette (Cmd+Shift+P)
-3. Select the `vscode-port-monitor-0.3.3.vsix` file
+3. Select the `vscode-port-monitor-0.3.5.vsix` file
 4. The extension will be installed
 
 **✅ With this method, you can use it immediately in other projects!**
 
 ### Method 3: VS Code Command Line (if code command is available)
 ```bash
-code --install-extension vscode-port-monitor-0.3.3.vsix
+code --install-extension vscode-port-monitor-0.3.5.vsix
 ```
 
 ### 🚀 How to use in other projects
-1. **Copy VSIX file**: Copy `vscode-port-monitor-0.3.3.vsix` to other project folders
+1. **Copy VSIX file**: Copy `vscode-port-monitor-0.3.5.vsix` to other project folders
 2. **Install from VSIX**: Install using Method 2 above
 3. **Add configuration**: Add settings to each project's `settings.json`
 4. **Start using immediately**: Port monitoring will start in the status bar
@@ -38,7 +38,7 @@ code --install-extension vscode-port-monitor-0.3.3.vsix
 
 ## Test Configuration Examples
 
-### Next.js Development Environment (v0.3.3 - Intelligent Processing)
+### Next.js Development Environment (v0.3.5 - Smart Error Detection)
 Add the following to your settings file (settings.json):
 
 ```json
@@ -69,7 +69,8 @@ Add the following to your settings file (settings.json):
     "showFullPortNumber": false,
     "compactRanges": true
   },
-  "portMonitor.intervalMs": 3000
+  "portMonitor.intervalMs": 3000,
+  "portMonitor.statusBarPosition": "right"
 }
 ```
 
@@ -78,9 +79,61 @@ Add the following to your settings file (settings.json):
 {
   "portMonitor.hosts": {
     "localhost": {
+      "3000": "frontend",
+      "3001": "backend", 
+      "5432": "database"
+    }
+  }
+}
+```
+
+### ⚠️ Common Configuration Mistakes (v0.3.5)
+
+The extension now detects and provides helpful error messages for common mistakes:
+
+#### ❌ Incorrect: Reversed port-label configuration
+```json
+{
+  "portMonitor.hosts": {
+    "localhost": {
       "frontend": 3000,
-      "backend": 3001,
-      "database": 5432
+      "backend": 3001
+    }
+  }
+}
+```
+**Error**: `Port numbers should be keys, not values. Current: {"frontend": 3000} Correct: {"3000": "frontend"}`
+
+#### ✅ Correct: Port as key, label as value
+```json
+{
+  "portMonitor.hosts": {
+    "localhost": {
+      "3000": "frontend",
+      "3001": "backend"
+    }
+  }
+}
+```
+
+#### ❌ Incorrect: Empty host name
+```json
+{
+  "portMonitor.hosts": {
+    "": {
+      "3000": "app"
+    }
+  }
+}
+```
+**Error**: `Empty host name detected. Use "localhost" instead of ""`
+
+#### ✅ Correct: Proper host name
+```json
+{
+  "portMonitor.hosts": {
+    "localhost": {
+      "3000": "app"
     }
   }
 }
@@ -161,9 +214,10 @@ Development[🟢Frontend|🟢API|🔴Proxy] Database[🔴PostgreSQL|🔴Redis] P
 - Check the VS Code output panel for error messages
 
 ### No port displays appearing
-- Verify configuration syntax is correct
+- Verify configuration syntax is correct (check for reversed port-label configuration)
 - Check that the ports are actually being used
 - Verify intervalMs setting (minimum 1000ms)
+- Look for "Configuration Error" in status bar for detailed error messages
 
 ### Performance issues
 - Increase intervalMs value
@@ -223,11 +277,29 @@ npm run package
 }
 ```
 
-### Process Management
+### Process Management & Status Bar Position
 ```json
 {
   "portMonitor.enableProcessKill": true,
   "portMonitor.confirmBeforeKill": true,
-  "portMonitor.enableLogViewer": true
+  "portMonitor.enableLogViewer": true,
+  "portMonitor.statusBarPosition": "left"
 }
 ```
+
+## New Features in v0.3.5
+
+### 🔧 Smart Configuration Error Detection
+- **Automatic error detection**: Detects common configuration mistakes
+- **Helpful error messages**: Shows specific fix suggestions in status bar tooltip
+- **Real-time validation**: Errors are detected as you type in settings
+
+### 📍 Status Bar Positioning  
+- **Configurable position**: Choose left or right alignment
+- **Instant updates**: Changes take effect immediately without restart
+- **Setting**: `"portMonitor.statusBarPosition": "left"` or `"right"`
+
+### 🏷️ Enhanced Group Name Handling
+- **Hidden system groups**: `__NOTITLE` prefixed groups don't show in display
+- **Multiple unnamed groups**: Support for `__NOTITLE1`, `__NOTITLE2`, etc.
+- **Cleaner display**: Removes clutter from status bar

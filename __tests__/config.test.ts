@@ -73,17 +73,15 @@ describe('ConfigManager', () => {
 
   it('should parse processed hosts config correctly', () => {
     const config: PortMonitorConfig = {
-      hosts: { 
-        localhost: { 
-          "Next.js": { 
-            3000: "app", 
-            3001: "api" 
-          },
-          "Services": {
-            22: "ssh",
-            80: "http"
-          }
-        } 
+      hosts: {
+        "Next.js": { 
+          "3000": "app", 
+          "3001": "api" 
+        },
+        "Services": {
+          "22": "ssh",
+          "80": "http"
+        }
       },
       statusIcons: { inUse: 'X', free: 'O' },
       intervalMs: 3000,
@@ -91,10 +89,10 @@ describe('ConfigManager', () => {
     
     const result = ConfigManager.parseHostsConfig(config);
     expect(result).toEqual([
-      { host: 'localhost', port: 3000, label: 'app', group: 'Next.js' },
-      { host: 'localhost', port: 3001, label: 'api', group: 'Next.js' },
-      { host: 'localhost', port: 22, label: 'ssh', group: 'Services' },
-      { host: 'localhost', port: 80, label: 'http', group: 'Services' }
+      { host: 'localhost', port: 3000, label: 'app', group: 'Next.js', groupConfigs: { compact: false, separator: '|', show_title: true } },
+      { host: 'localhost', port: 3001, label: 'api', group: 'Next.js', groupConfigs: { compact: false, separator: '|', show_title: true } },
+      { host: 'localhost', port: 22, label: 'ssh', group: 'Services', groupConfigs: { compact: false, separator: '|', show_title: true } },
+      { host: 'localhost', port: 80, label: 'http', group: 'Services', groupConfigs: { compact: false, separator: '|', show_title: true } }
     ]);
   });
 
@@ -107,12 +105,10 @@ describe('ConfigManager', () => {
     
     const processed = ConfigManager.processHostsConfig(rawConfig);
     expect(processed).toEqual({
-      "localhost": {
-        "__NOTITLE": {
-          "3000": "user",
-          "3001": "car",
-          "3007": "ai-cam"
-        }
+      "__NOTITLE": {
+        "3000": "user",
+        "3001": "car",
+        "3007": "ai-cam"
       }
     });
   });

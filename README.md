@@ -19,6 +19,9 @@ Features intelligent configuration processing that automatically handles simple 
 - 🛑 **Process management** (kill processes using ports)
 - 📺 **Log viewer** (real-time stdout/stderr display)
 - 🎨 **Customizable display** (icons, colors, intervals)
+- 📍 **Status bar positioning** (left or right alignment)
+- 🚨 **Smart error detection** (detailed configuration validation)
+- 💡 **Helpful error messages** (specific fix suggestions)
 
 ## 📸 Screenshots
 
@@ -197,6 +200,7 @@ The extension uses a 4-step intelligent processing system:
 | `portMonitor.backgroundColor` | Status bar background color | none |
 | `portMonitor.portColors` | Background color per port | none |
 | `portMonitor.intervalMs` | Monitoring interval (ms, minimum 1000) | `3000` |
+| `portMonitor.statusBarPosition` | Status bar position ("left" or "right") | `"right"` |
 | `portMonitor.displayOptions.separator` | Port separator character | `"|"` |
 | `portMonitor.displayOptions.showFullPortNumber` | Show full port numbers | `false` |
 | `portMonitor.enableProcessKill` | Enable process kill feature | `true` |
@@ -271,6 +275,99 @@ The extension uses a 4-step intelligent processing system:
 - Default: `localhost: 300[🟢0|⚪️1|⚪️2]`
 - Custom: `localhost: [🟢3000 • ⚪️3001 • ⚪️3002]`
 - Single port: `db-server: [⚪️postgresql:5432]`
+
+## 🔧 Configuration Error Detection
+
+The extension provides detailed error detection and helpful fix suggestions for common configuration mistakes:
+
+### Common Configuration Errors
+
+#### 1. Reversed Port-Label Configuration
+❌ **Incorrect:**
+```json
+{
+  "portMonitor.hosts": {
+    "localhost": {
+      "user": 3000,
+      "car": 3001
+    }
+  }
+}
+```
+
+✅ **Correct:**
+```json
+{
+  "portMonitor.hosts": {
+    "localhost": {
+      "3000": "user",
+      "3001": "car"
+    }
+  }
+}
+```
+
+#### 2. Empty Host Name
+❌ **Incorrect:**
+```json
+{
+  "portMonitor.hosts": {
+    "": {
+      "3000": "app"
+    }
+  }
+}
+```
+
+✅ **Correct:**
+```json
+{
+  "portMonitor.hosts": {
+    "localhost": {
+      "3000": "app"
+    }
+  }
+}
+```
+
+#### 3. Host Name as Port Number
+❌ **Incorrect:**
+```json
+{
+  "portMonitor.hosts": {
+    "3000": {
+      "app": "label"
+    }
+  }
+}
+```
+
+✅ **Correct:**
+```json
+{
+  "portMonitor.hosts": {
+    "localhost": {
+      "3000": "app"
+    }
+  }
+}
+```
+
+### Error Messages
+
+When configuration errors are detected, the extension shows:
+- **Status Bar**: "Port Monitor: Configuration Error"
+- **Tooltip**: Detailed error messages with fix suggestions
+- **Example**: `Port numbers should be keys, not values. Current: {"user": 3000} Correct: {"3000": "user"}`
+
+### Status Bar Position
+
+You can configure the status bar position:
+```json
+{
+  "portMonitor.statusBarPosition": "left"  // or "right" (default)
+}
+```
 
 ---
 ※ All configuration formats are automatically processed and normalized internally for consistent behavior.

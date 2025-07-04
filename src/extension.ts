@@ -153,24 +153,38 @@ export class PortMonitorExtension {
             const groupDisplays: string[] = [];
             
             for (const [groupName, ports] of Object.entries(groups)) {
-                const portDisplays = ports.map(port => {
-                    const icon = port.isOpen ? config.statusIcons.inUse : config.statusIcons.free;
-                    return `${icon}${port.label}:${port.port}`;
-                });
+                // Get group configs from first port (all ports in a group share configs)
+                const groupConfigs = ports[0]?.groupConfigs;
+                const isCompact = groupConfigs?.compact === true;
+                const separator = groupConfigs?.separator || '|';
+                const showTitle = groupConfigs?.show_title !== false; // default true
                 
-                // Don't show __NOTITLE-prefixed or empty group names, but show others
-                if (groupName.startsWith('__NOTITLE') || groupName === '') {
-                    groupDisplays.push(portDisplays.join(' '));
+                if (isCompact) {
+                    // Compact mode: find common prefix and create range display
+                    const compactDisplay = this.createCompactDisplay(ports, config.statusIcons, separator);
+                    
+                    if (groupName.startsWith('__NOTITLE') || groupName === '' || !showTitle) {
+                        groupDisplays.push(compactDisplay);
+                    } else {
+                        groupDisplays.push(`${groupName}: ${compactDisplay}`);
+                    }
                 } else {
-                    groupDisplays.push(`${groupName}:[${portDisplays.join('|')}]`);
+                    // Normal mode: individual port display
+                    const portDisplays = ports.map(port => {
+                        const icon = port.isOpen ? config.statusIcons.inUse : config.statusIcons.free;
+                        return `${icon}${port.label}:${port.port}`;
+                    });
+                    
+                    if (groupName.startsWith('__NOTITLE') || groupName === '' || !showTitle) {
+                        groupDisplays.push(portDisplays.join(' '));
+                    } else {
+                        groupDisplays.push(`${groupName}:[${portDisplays.join(separator)}]`);
+                    }
                 }
             }
             
-            if (host === 'localhost') {
-                hostDisplays.push(groupDisplays.join(' '));
-            } else {
-                hostDisplays.push(`${host}:${groupDisplays.join(' ')}`);
-            }
+            // Since we're using flat structure, all hosts are localhost - don't show host name
+            hostDisplays.push(groupDisplays.join(' '));
         }
 
         const displayText = hostDisplays.join(' ');
@@ -178,29 +192,81 @@ export class PortMonitorExtension {
         this.statusBarItem.text = displayText;
         this.statusBarItem.tooltip = this.generateTooltip(results);
 
-        // Background color setting - simplified since mode is no longer used
-        if (config.backgroundColor) {
-            this.statusBarItem.backgroundColor = new vscode.ThemeColor(config.backgroundColor);
-        } else if (config.portColors) {
+        // Background color setting - priority: group bgcolor > global backgroundColor > portColors
+        let backgroundColor: string | undefined;
+        
+        // Check for group-level bgcolor (highest priority)
+        for (const port of results) {
+            if (port.groupConfigs?.bgcolor) {
+                backgroundColor = port.groupConfigs.bgcolor;
+                break;
+            }
+        }
+        
+        // Fall back to global backgroundColor
+        if (!backgroundColor && config.backgroundColor) {
+            backgroundColor = config.backgroundColor;
+        }
+        
+        // Fall back to port-specific colors
+        if (!backgroundColor && config.portColors) {
             // Color of first inUse port, otherwise free port color, otherwise undefined
-            let color: string | undefined;
             for (const port of results) {
                 if (port.isOpen && config.portColors[port.port.toString()]) {
-                    color = config.portColors[port.port.toString()];
+                    backgroundColor = config.portColors[port.port.toString()];
                     break;
                 }
             }
-            if (!color) {
+            if (!backgroundColor) {
                 for (const port of results) {
                     if (!port.isOpen && config.portColors[port.port.toString()]) {
-                        color = config.portColors[port.port.toString()];
+                        backgroundColor = config.portColors[port.port.toString()];
                         break;
                     }
                 }
             }
-            this.statusBarItem.backgroundColor = color ? new vscode.ThemeColor(color) : undefined;
+        }
+        
+        this.statusBarItem.backgroundColor = backgroundColor ? new vscode.ThemeColor(backgroundColor) : undefined;
+    }
+
+    private createCompactDisplay(ports: PortInfo[], statusIcons: { inUse: string; free: string }, separator: string): string {
+        if (ports.length === 0) return '';
+        
+        // Find common prefix for port numbers
+        const portNumbers = ports.map(p => p.port).sort((a, b) => a - b);
+        let commonPrefix = '';
+        
+        // Find the longest common prefix among port numbers
+        const minPort = portNumbers[0].toString();
+        const maxPort = portNumbers[portNumbers.length - 1].toString();
+        
+        for (let i = 0; i < Math.min(minPort.length, maxPort.length); i++) {
+            if (minPort[i] === maxPort[i]) {
+                commonPrefix += minPort[i];
+            } else {
+                break;
+            }
+        }
+        
+        // If common prefix is meaningful (at least 2 digits), use compact format
+        if (commonPrefix.length >= 2) {
+            const portDisplays = ports.map(port => {
+                const icon = port.isOpen ? statusIcons.inUse : statusIcons.free;
+                const suffix = port.port.toString().substring(commonPrefix.length);
+                const label = port.label ? `${port.label}:` : '';
+                return `${icon}${label}${suffix}`;
+            });
+            
+            return `${commonPrefix}[${portDisplays.join(separator)}]`;
         } else {
-            this.statusBarItem.backgroundColor = undefined;
+            // Fall back to normal display if no meaningful prefix
+            const portDisplays = ports.map(port => {
+                const icon = port.isOpen ? statusIcons.inUse : statusIcons.free;
+                return `${icon}${port.label}:${port.port}`;
+            });
+            
+            return `[${portDisplays.join(separator)}]`;
         }
     }
 
