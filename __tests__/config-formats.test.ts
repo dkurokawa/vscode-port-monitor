@@ -81,10 +81,12 @@ describe('Port Monitor Configuration Formats', () => {
             
             const processed = ConfigManager.processHostsConfig(config);
             expect(processed).toEqual({
-                "Web": {
-                    80: "http",
-                    443: "https",
-                    22: "ssh"
+                "__NOTITLE": {
+                    "Web": {
+                        "80": "http",
+                        "443": "https",
+                        "22": "ssh"
+                    }
                 }
             });
         });
@@ -480,8 +482,8 @@ describe('Port Monitor Configuration Formats', () => {
             const dbPorts = result.filter(r => r.group === "Database");
             expect(dbPorts[0].groupConfigs?.compact).toBe(false); // default
             
-            // Check well-known ports
-            const servicePorts = result.filter(r => r.group === "Services");
+            // Check well-known ports - Services is now under __NOTITLE
+            const servicePorts = result.filter(r => r.group === "__NOTITLE");
             const httpPort = servicePorts.find(r => r.port === 80);
             expect(httpPort?.label).toBe("http");
         });

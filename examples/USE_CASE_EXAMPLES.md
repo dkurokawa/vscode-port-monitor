@@ -2,7 +2,7 @@
 
 Specific configuration examples tailored to real development scenarios.
 
-**Note**: All examples showcase the v0.3.5 intelligent configuration processing with smart error detection, 4-step transformation that automatically handles well-known port names, port ranges, and multiple configuration formats with zero external dependencies.
+**Note**: All examples showcase the v0.3.6 intelligent configuration processing with smart error detection, 5-step transformation that automatically handles well-known port names, port ranges, and multiple configuration formats with zero external dependencies.
 
 ## 🎯 Practical Use Cases
 
@@ -10,35 +10,36 @@ Specific configuration examples tailored to real development scenarios.
 ```json
 {
   "portMonitor.hosts": {
-    "localhost": {
-      "Frontend": {
-        "3000": "Customer App",
-        "3001": "Admin Panel", 
-        "3002": "Landing Page"
-      },
-      "Microservices": {
-        "8001-8004": "APIs"
-      },
-      "Infrastructure": ["postgresql", "redis", 9200],
-      "Dev Tools": [6006, 4000, 8080]
+    "Frontend": {
+      "3000": "Customer App",
+      "3001": "Admin Panel", 
+      "3002": "Landing Page",
+      "__CONFIG": {
+        "compact": true,
+        "bgcolor": "#e6f3ff",
+        "separator": " | "
+      }
+    },
+    "Microservices": {
+      "8001": "Auth API",
+      "8002": "User API",
+      "8003": "Payment API",
+      "8004": "Notification API",
+      "__CONFIG": {
+        "compact": true,
+        "show_title": true
+      }
+    },
+    "Infrastructure": {
+      "5432": "PostgreSQL",
+      "6379": "Redis",
+      "9200": "Elasticsearch"
+    },
+    "Dev Tools": {
+      "6006": "Storybook",
+      "4000": "GraphQL Playground",
+      "8080": "API Gateway"
     }
-  },
-  "portMonitor.portLabels": {
-    "8001": "Auth API",
-    "8002": "User API",
-    "8003": "Payment API",
-    "8004": "Notification API",
-    "5432": "PostgreSQL",
-    "6379": "Redis",
-    "9200": "Elasticsearch",
-    "6006": "Storybook",
-    "4000": "GraphQL Playground",
-    "8080": "API Gateway"
-  },
-  "portMonitor.displayOptions": {
-    "separator": " | ",
-    "compactRanges": true,
-    "maxDisplayLength": 180
   },
   "portMonitor.statusBarPosition": "right"
 }
@@ -49,42 +50,47 @@ Specific configuration examples tailored to real development scenarios.
 {
   "portMonitor.hosts": {
     "Project A": {
-      "localhost": [3000, 3001, 5000, 5001]
+      "3000": "A: Customer UI",
+      "3001": "A: Admin Panel",
+      "5000": "A: API",
+      "5001": "A: Worker",
+      "__CONFIG": {
+        "compact": true,
+        "bgcolor": "#e6f3ff"
+      }
     },
     "Project B": {
-      "localhost": [3010, 3011, 5010, 5011]
+      "3010": "B: Customer UI",
+      "3011": "B: Admin Panel",
+      "5010": "B: API",
+      "5011": "B: Worker",
+      "__CONFIG": {
+        "compact": true,
+        "bgcolor": "#f0f8e6"
+      }
     },
     "Project C": {
-      "localhost": [3020, 3021, 5020, 5021]
+      "3020": "C: Customer UI",
+      "3021": "C: Admin Panel",
+      "5020": "C: API",
+      "5021": "C: Worker",
+      "__CONFIG": {
+        "compact": true,
+        "bgcolor": "#fff2e6"
+      }
     },
     "Shared Infrastructure": {
-      "localhost": [5432, 3306, 6379, 27017]
+      "5432": "PostgreSQL",
+      "3306": "MySQL",
+      "6379": "Redis",
+      "27017": "MongoDB"
     },
     "Dev Support": {
-      "localhost": [6006, 6016, 6026, 8080]
+      "6006": "A: Storybook",
+      "6016": "B: Storybook",
+      "6026": "C: Storybook",
+      "8080": "Shared Gateway"
     }
-  },
-  "portMonitor.portLabels": {
-    "3000": "A: Customer UI",
-    "3001": "A: Admin Panel",
-    "5000": "A: API",
-    "5001": "A: Worker",
-    "3010": "B: Customer UI",
-    "3011": "B: Admin Panel",
-    "5010": "B: API",
-    "5011": "B: Worker",
-    "3020": "C: Customer UI",
-    "3021": "C: Admin Panel",
-    "5020": "C: API",
-    "5021": "C: Worker",
-    "5432": "PostgreSQL",
-    "3306": "MySQL",
-    "6379": "Redis",
-    "27017": "MongoDB",
-    "6006": "A: Storybook",
-    "6016": "B: Storybook",
-    "6026": "C: Storybook",
-    "8080": "Shared Gateway"
   }
 }
 ```
@@ -94,35 +100,37 @@ Specific configuration examples tailored to real development scenarios.
 {
   "portMonitor.hosts": {
     "Frontend": {
-      "localhost": [3000, 3001, 3002, 3003]
+      "3000": "Shop UI",
+      "3001": "Admin Panel",
+      "3002": "Mobile App",
+      "3003": "POS System",
+      "__CONFIG": {
+        "compact": true,
+        "separator": " • "
+      }
     },
     "Backend APIs": {
-      "localhost": [8000, 8001, 8002, 8003, 8004]
+      "8000": "Product API",
+      "8001": "User API",
+      "8002": "Order API",
+      "8003": "Inventory API",
+      "8004": "Recommendation API",
+      "__CONFIG": {
+        "compact": false,
+        "show_title": true
+      }
     },
     "Payment & External": {
-      "localhost": [9000, 9001, 9002]
+      "9000": "Payment Gateway",
+      "9001": "External API Proxy",
+      "9002": "Webhook Handler"
     },
     "Databases": {
-      "localhost": [5432, 3306, 6379, 27017]
+      "5432": "Product DB",
+      "3306": "User DB",
+      "6379": "Session Store",
+      "27017": "Logs & Analytics"
     }
-  },
-  "portMonitor.portLabels": {
-    "3000": "Shop UI",
-    "3001": "Admin Panel",
-    "3002": "Mobile App",
-    "3003": "POS System",
-    "8000": "Product API",
-    "8001": "User API",
-    "8002": "Order API",
-    "8003": "Inventory API",
-    "8004": "Recommendation API",
-    "9000": "Payment Gateway",
-    "9001": "External API Proxy",
-    "9002": "Webhook Handler",
-    "5432": "Product DB",
-    "3306": "User DB",
-    "6379": "Session Store",
-    "27017": "Logs & Analytics"
   }
 }
 ```
@@ -132,41 +140,43 @@ Specific configuration examples tailored to real development scenarios.
 {
   "portMonitor.hosts": {
     "Tenant A": {
-      "localhost": [3000, 5000]
+      "3000": "Tenant A UI",
+      "5000": "Tenant A API",
+      "__CONFIG": {
+        "separator": " • ",
+        "compact": false,
+        "bgcolor": "#e6f3ff"
+      }
     },
     "Tenant B": {
-      "localhost": [3001, 5001]
+      "3001": "Tenant B UI",
+      "5001": "Tenant B API",
+      "__CONFIG": {
+        "separator": " • ",
+        "compact": false,
+        "bgcolor": "#f0f8e6"
+      }
     },
     "Tenant C": {
-      "localhost": [3002, 5002]
+      "3002": "Tenant C UI",
+      "5002": "Tenant C API",
+      "__CONFIG": {
+        "separator": " • ",
+        "compact": false,
+        "bgcolor": "#fff2e6"
+      }
     },
     "Admin & Shared": {
-      "localhost": [3100, 5100, 8080]
+      "3100": "Admin Panel",
+      "5100": "Admin API",
+      "8080": "Proxy"
     },
     "Infrastructure": {
-      "localhost": [5432, 6379, 9200, 5601]
+      "5432": "PostgreSQL",
+      "6379": "Redis",
+      "9200": "Elasticsearch",
+      "5601": "Kibana"
     }
-  },
-  "portMonitor.portLabels": {
-    "3000": "Tenant A UI",
-    "5000": "Tenant A API",
-    "3001": "Tenant B UI",
-    "5001": "Tenant B API",
-    "3002": "Tenant C UI",
-    "5002": "Tenant C API",
-    "3100": "Admin Panel",
-    "5100": "Admin API",
-    "8080": "Proxy",
-    "5432": "PostgreSQL",
-    "6379": "Redis",
-    "9200": "Elasticsearch",
-    "5601": "Kibana"
-  },
-  "portMonitor.displayOptions": {
-    "separator": " • ",
-    "compactRanges": false,
-    "showFullPortNumber": true,
-    "maxDisplayLength": 200
   }
 }
 ```
@@ -176,37 +186,34 @@ Specific configuration examples tailored to real development scenarios.
 {
   "portMonitor.hosts": {
     "React Native": {
-      "localhost": [8081, 19000, 19001, 19002]
+      "8081": "Metro Bundler",
+      "19000": "Expo DevTools",
+      "19001": "iOS Simulator",
+      "19002": "Android Emulator",
+      "__CONFIG": {
+        "compact": true,
+        "bgcolor": "#20232a"
+      }
     },
     "API Development": {
-      "localhost": [3000, 3001, 3002]
+      "3000": "Auth API",
+      "3001": "Data API",
+      "3002": "Notification API"
     },
     "Mock Servers": {
-      "localhost": [4000, 4001, 4002]
+      "4000": "Auth Mock",
+      "4001": "Data Mock",
+      "4002": "Notification Mock"
     },
     "Databases": {
-      "localhost": [5432, 6379]
+      "5432": "PostgreSQL",
+      "6379": "Redis"
     },
     "Dev Tools": {
-      "localhost": [9090, 3030, 8080]
+      "9090": "Flipper",
+      "3030": "Storybook",
+      "8080": "API Gateway"
     }
-  },
-  "portMonitor.portLabels": {
-    "8081": "Metro Bundler",
-    "19000": "Expo DevTools",
-    "19001": "iOS Simulator",
-    "19002": "Android Emulator",
-    "3000": "Auth API",
-    "3001": "Data API",
-    "3002": "Notification API",
-    "4000": "Auth Mock",
-    "4001": "Data Mock",
-    "4002": "Notification Mock",
-    "5432": "PostgreSQL",
-    "6379": "Redis",
-    "9090": "Flipper",
-    "3030": "Storybook",
-    "8080": "API Gateway"
   }
 }
 ```
@@ -417,7 +424,7 @@ Specific configuration examples tailored to real development scenarios.
 }
 ```
 
-## ⚠️ Common Configuration Mistakes & Solutions (v0.3.5)
+## ⚠️ Common Configuration Mistakes & Solutions (v0.3.6)
 
 ### Mistake 1: Reversed Port-Label Configuration
 
@@ -440,7 +447,7 @@ Specific configuration examples tailored to real development scenarios.
 ```json
 {
   "portMonitor.hosts": {
-    "localhost": {
+    "Development": {
       "3000": "frontend",
       "3001": "backend", 
       "5432": "database"
@@ -471,11 +478,9 @@ Specific configuration examples tailored to real development scenarios.
 ```json
 {
   "portMonitor.hosts": {
-    "localhost": {
-      "Development": {
-        "3000": "app",
-        "3001": "api"
-      }
+    "Development": {
+      "3000": "app",
+      "3001": "api"
     }
   }
 }
@@ -503,7 +508,7 @@ Specific configuration examples tailored to real development scenarios.
 ```json
 {
   "portMonitor.hosts": {
-    "localhost": {
+    "Development": {
       "3000": "app",
       "3001": "api"
     }
@@ -532,7 +537,7 @@ Specific configuration examples tailored to real development scenarios.
 ```json
 {
   "portMonitor.hosts": {
-    "localhost": {
+    "Development": {
       "3000": "app",
       "3001": "api", 
       "5432": "database"
@@ -549,7 +554,7 @@ Specific configuration examples tailored to real development scenarios.
 4. **Tooltip Details**: Hover over status bar for detailed error information
 5. **Example Solutions**: Each error message includes correct format examples
 
-### Status Bar Positioning (New in v0.3.5)
+### Status Bar Positioning (New in v0.3.6)
 
 All configurations now support status bar positioning:
 

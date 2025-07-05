@@ -11,7 +11,7 @@ Features intelligent configuration processing that automatically handles simple 
 ## ✨ Key Features
 
 - 🔍 **Multi-host & multi-port monitoring** with zero external dependencies
-- 🏷️ **Intelligent configuration processing** (4-step automatic transformation)
+- 🏷️ **Intelligent configuration processing** (5-step automatic transformation)
 - 📊 **Real-time status display** (live status bar monitoring)
 - 🌐 **Well-known port support** (http, https, ssh, postgresql, etc.)
 - 📈 **Port range expansion** ("3000-3009" → individual ports)
@@ -54,17 +54,42 @@ This extension supports multiple configuration formats that are automatically pr
 ```json
 {
   "portMonitor.hosts": {
-    "localhost": {
-      "Next.js": {
-        "3000": "app",
-        "3001": "api",
-        "3002-3009": "etc"
-      },
-      "Web": ["http", "https"]
+    "Next.js": {
+      "3000": "app",
+      "3001": "api",
+      "3002": "etc",
+      "3003": "etc",
+      "3004": "etc",
+      "3005": "etc",
+      "3006": "etc",
+      "3007": "etc",
+      "3008": "etc",
+      "3009": "etc",
+      "__CONFIG": {
+        "compact": true,
+        "show_title": true
+      }
     },
-    "127.0.0.1": {
-      "Services": ["ssh", "postgresql"],
-      "Development": [8080, "8081-8090"]
+    "Web Services": {
+      "80": "http",
+      "443": "https"
+    },
+    "Server Services": {
+      "22": "ssh",
+      "5432": "postgresql"
+    },
+    "Development": {
+      "8080": "main",
+      "8081": "alt",
+      "8082": "alt",
+      "8083": "alt",
+      "8084": "alt",
+      "8085": "alt",
+      "8086": "alt",
+      "8087": "alt",
+      "8088": "alt",
+      "8089": "alt",
+      "8090": "alt"
     }
   }
 }
@@ -92,27 +117,33 @@ Results are displayed in the status bar like `[🟢admin:3000|🟢app:3001|⚪�
 
 ### Automatic Configuration Processing
 
-The extension uses a 4-step intelligent processing system:
+The extension uses a 5-step intelligent processing system:
 
 1. **Well-known ports replacement**: `"http"` → `80`, `"https"` → `443`, etc.
-2. **Default grouping**: Simple arrays get wrapped in `"__NOTITLE"` group
-3. **Range expansion**: `"3002-3009"` → individual ports `3002, 3003, 3004...`
+2. **Port range expansion**: `"3002-3009"` → individual ports `3002, 3003, 3004...`
+3. **Default group wrapper**: Simple arrays get wrapped in `"__NOTITLE"` group
 4. **Array to object conversion**: `[3000, 3001]` → `{"3000": "", "3001": ""}`
+5. **Structure normalization**: Clean and validate final configuration format
 
-### Multiple Servers + Background Color
+### Multiple Services with __CONFIG
 ```json
 {
   "portMonitor.hosts": {
-    "localhost": {
-      "Frontend": {
-        "3000": "frontend",
-        "3001": "backend"
+    "Frontend": {
+      "3000": "frontend",
+      "3001": "backend",
+      "__CONFIG": {
+        "compact": true,
+        "bgcolor": "#e6f3ff",
+        "show_title": true
       }
     },
-    "db-server": {
-      "Database": {
-        "5432": "postgres",
-        "6379": "redis"
+    "Database": {
+      "5432": "postgres",
+      "6379": "redis",
+      "__CONFIG": {
+        "compact": false,
+        "bgcolor": "#f0f8e6"
       }
     }
   },
@@ -124,13 +155,9 @@ The extension uses a 4-step intelligent processing system:
 ```json
 {
   "portMonitor.hosts": {
-    "localhost": {
-      "Development": ["3000-3009", "8080"],
-      "Web Services": ["http", "https"]
-    },
-    "production": {
-      "Services": ["ssh", "postgresql"]
-    }
+    "Development": ["3000-3009", "8080"],
+    "Web Services": ["http", "https"],
+    "Server Services": ["ssh", "postgresql"]
   },
   "portMonitor.portColors": {
     "3000": "#ffcccc",
@@ -169,16 +196,18 @@ The extension uses a 4-step intelligent processing system:
 ```json
 {
   "portMonitor.hosts": {
-    "localhost": {
-      "Frontend": {
-        "3000": "react",
-        "6006": "storybook",
-        "8080": "webpack"
-      },
-      "Backend": {
-        "3001": "node",
-        "3002": "api"
+    "Frontend": {
+      "3000": "react",
+      "6006": "storybook",
+      "8080": "webpack",
+      "__CONFIG": {
+        "compact": true,
+        "separator": " | "
       }
+    },
+    "Backend": {
+      "3001": "node",
+      "3002": "api"
     }
   }
 }

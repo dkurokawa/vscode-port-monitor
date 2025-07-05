@@ -339,10 +339,36 @@ Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
     }
 
     /**
-     * Process hosts configuration through 4-step transformation
+     * Process hosts configuration through 5-step transformation
+     * Each step handles one specific transformation to ensure testability and maintainability
      */
     public static processHostsConfig(rawHosts: any): ProcessedHostsWithSettings {
-        // Well-known ports mapping
+        let processed = rawHosts;
+
+        // Step 1: Replace well-known port names with port numbers
+        processed = ConfigManager.step1_ReplaceWellKnownPorts(processed);
+
+        // Step 2: Expand port ranges (e.g., "3000-3005" -> [3000, 3001, 3002, 3003, 3004, 3005])
+        processed = ConfigManager.step2_ExpandPortRanges(processed);
+
+        // Step 3: Add default group wrapper for ungrouped configurations
+        processed = ConfigManager.step3_AddDefaultGroupWrapper(processed);
+
+        // Step 4: Convert port arrays to port-label objects
+        processed = ConfigManager.step4_ConvertArraysToObjects(processed);
+
+        // Step 5: Normalize structure and validate final format
+        processed = ConfigManager.step5_NormalizeStructure(processed);
+
+        return processed;
+    }
+
+    /**
+     * Step 1: Replace well-known port names with port numbers
+     * Input: Any configuration with string port names like "http", "https", "postgresql"
+     * Output: Same structure but with port names replaced by numbers and labels tracked
+     */
+    private static step1_ReplaceWellKnownPorts(config: any): any {
         const wellKnownPorts: Record<string, number> = {
             'http': 80,
             'https': 443,
@@ -364,65 +390,81 @@ Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
             'imaps': 993,
             'pop3s': 995
         };
-
-        let processed = rawHosts;
-
-        // Step 1: Replace well-known ports
-        processed = ConfigManager.replaceWellKnownPorts(processed, wellKnownPorts);
-
-        // Step 2: Add default group wrapper
-        processed = ConfigManager.addDefaultGroupWrapper(processed);
-
-        // Step 3: Expand port ranges
-        processed = ConfigManager.expandPortRanges(processed);
-
-        // Step 4: Convert port arrays to port-label objects
-        processed = ConfigManager.convertPortArraysToObjects(processed);
-
-        return processed;
+        
+        return ConfigManager.replaceWellKnownPortsRecursive(config, wellKnownPorts);
     }
-
-    private static replaceWellKnownPorts(config: any, wellKnownPorts: Record<string, number>): any {
+    
+    private static replaceWellKnownPortsRecursive(config: any, wellKnownPorts: Record<string, number>): any {
         if (Array.isArray(config)) {
-            // For arrays, check if all items are well-known ports or port numbers
-            const hasWellKnownPorts = config.some(item => typeof item === 'string' && wellKnownPorts[item]);
-            if (hasWellKnownPorts && config.every(item => 
-                (typeof item === 'string' && wellKnownPorts[item]) || 
-                (typeof item === 'string' && /^\d+$/.test(item)) ||
-                typeof item === 'number'
-            )) {
-                // Convert array of well-known ports and numbers to port-label object
-                const portObject: Record<string, string> = {};
-                for (const item of config) {
-                    if (typeof item === 'string' && wellKnownPorts[item]) {
-                        portObject[wellKnownPorts[item].toString()] = item;
-                    } else if (typeof item === 'string' && /^\d+$/.test(item)) {
-                        portObject[item] = '';
-                    } else if (typeof item === 'number') {
-                        portObject[item.toString()] = '';
-                    }
+            // Replace well-known port names with objects containing port number and original name
+            return config.map(item => {
+                if (typeof item === 'string' && wellKnownPorts[item]) {
+                    return { __port: wellKnownPorts[item], __originalName: item };
                 }
-                return portObject;
-            } else {
-                // Otherwise, just replace well-known port names with numbers
-                return config.map(item => {
-                    if (typeof item === 'string' && wellKnownPorts[item]) {
-                        return wellKnownPorts[item];
-                    }
-                    return ConfigManager.replaceWellKnownPorts(item, wellKnownPorts);
-                });
-            }
+                return ConfigManager.replaceWellKnownPortsRecursive(item, wellKnownPorts);
+            });
         } else if (typeof config === 'object' && config !== null) {
             const result: any = {};
             for (const [key, value] of Object.entries(config)) {
-                result[key] = ConfigManager.replaceWellKnownPorts(value, wellKnownPorts);
+                // Replace well-known port names in keys
+                const newKey = (typeof key === 'string' && wellKnownPorts[key]) ? wellKnownPorts[key].toString() : key;
+                result[newKey] = ConfigManager.replaceWellKnownPortsRecursive(value, wellKnownPorts);
             }
             return result;
         }
         return config;
     }
 
-    private static addDefaultGroupWrapper(config: any): any {
+    /**
+     * Step 2: Expand port ranges like \"3000-3005\" into individual ports [3000, 3001, 3002, 3003, 3004, 3005]
+     * Input: Configuration with possible port ranges as strings (may include __port objects)
+     * Output: Same structure but with port ranges expanded to individual ports
+     */
+    private static step2_ExpandPortRanges(config: any): any {
+        if (typeof config !== 'object' || config === null) {
+            return config;
+        }
+
+        if (Array.isArray(config)) {
+            const expanded: any[] = [];
+            for (const item of config) {
+                if (typeof item === 'string' && /^\d+-\d+$/.test(item)) {
+                    // Expand range
+                    const [start, end] = item.split('-').map(Number);
+                    for (let port = start; port <= end; port++) {
+                        expanded.push(port);
+                    }
+                } else if (typeof item === 'object' && item.__port && item.__originalName) {
+                    // Pass through well-known port objects unchanged
+                    expanded.push(item);
+                } else {
+                    expanded.push(ConfigManager.step2_ExpandPortRanges(item));
+                }
+            }
+            return expanded;
+        }
+
+        const result: any = {};
+        for (const [key, value] of Object.entries(config)) {
+            if (typeof key === 'string' && /^\d+-\d+$/.test(key)) {
+                // Expand range key
+                const [start, end] = key.split('-').map(Number);
+                for (let port = start; port <= end; port++) {
+                    result[port] = value;
+                }
+            } else {
+                result[key] = ConfigManager.step2_ExpandPortRanges(value);
+            }
+        }
+        return result;
+    }
+    
+    /**
+     * Step 3: Add default group wrapper for configurations that need grouping
+     * Input: Configuration that may be flat arrays or direct port mappings
+     * Output: Properly grouped configuration with __NOTITLE wrapper when needed
+     */
+    private static step3_AddDefaultGroupWrapper(config: any): any {
         // Handle empty config
         if (!config || Object.keys(config).length === 0) {
             return {};
@@ -462,6 +504,78 @@ Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
         return config;
     }
 
+    /**
+     * Step 4: Convert port arrays to port-label objects
+     * Input: Configuration with arrays of ports (may include __port/__originalName objects)
+     * Output: Configuration with port-label object mappings
+     */
+    private static step4_ConvertArraysToObjects(config: any): any {
+        if (typeof config !== 'object' || config === null) {
+            return config;
+        }
+
+        if (Array.isArray(config)) {
+            // Convert array to port-label mapping
+            const portObject: Record<string, string> = {};
+            for (const item of config) {
+                if (typeof item === 'number') {
+                    portObject[item.toString()] = '';
+                } else if (typeof item === 'string' && /^\d+$/.test(item)) {
+                    portObject[item] = '';
+                } else if (typeof item === 'object' && item.__port && item.__originalName) {
+                    // Handle well-known port with original name
+                    portObject[item.__port.toString()] = item.__originalName;
+                }
+            }
+            return portObject;
+        }
+
+        const result: any = {};
+        for (const [key, value] of Object.entries(config)) {
+            if (Array.isArray(value)) {
+                // Convert array to port-label mapping
+                const portObject: Record<string, string> = {};
+                for (const item of value) {
+                    if (typeof item === 'number') {
+                        portObject[item.toString()] = '';
+                    } else if (typeof item === 'string' && /^\d+$/.test(item)) {
+                        portObject[item] = '';
+                    } else if (typeof item === 'object' && item.__port && item.__originalName) {
+                        // Handle well-known port with original name
+                        portObject[item.__port.toString()] = item.__originalName;
+                    }
+                }
+                result[key] = portObject;
+            } else {
+                result[key] = ConfigManager.step4_ConvertArraysToObjects(value);
+            }
+        }
+        return result;
+    }
+    
+    /**
+     * Step 5: Normalize structure and validate final format
+     * Input: Configuration with mixed structures
+     * Output: Clean, normalized configuration ready for use
+     */
+    private static step5_NormalizeStructure(config: any): any {
+        if (typeof config !== 'object' || config === null) {
+            return config;
+        }
+
+        const result: any = {};
+        for (const [key, value] of Object.entries(config)) {
+            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                // Normalize nested objects
+                result[key] = ConfigManager.step5_NormalizeStructure(value);
+            } else {
+                result[key] = value;
+            }
+        }
+        return result;
+    }
+    
+    // Legacy method - kept for backward compatibility but no longer used
     private static expandPortRanges(config: any): any {
         if (typeof config !== 'object' || config === null) {
             return config;

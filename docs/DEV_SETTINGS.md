@@ -1,6 +1,6 @@
-# Port Monitor - Development Test Settings (v0.3.3)
+# Port Monitor - Development Test Settings (v0.3.6)
 
-Test configuration examples showcasing the new 4-step intelligent configuration processing with zero dependencies.
+Test configuration examples showcasing the new 5-step intelligent configuration processing with zero dependencies.
 
 ## Expected Display Examples
 
@@ -28,7 +28,17 @@ localhost:30[🟢main:00|🟢dev:01|🔴4000]
 ### When There is No Common Prefix
 ```
 localhost:[🟢main:3000|🟢dev:3001|🔴8080|🔴9000]
-```## Basic Format (Simple Array - v0.3.3)
+```## 5-Step Configuration Processing (v0.3.6)
+
+The extension now uses a systematic 5-step processing approach for better maintainability and testability:
+
+1. **Step 1**: Replace well-known port names with port numbers
+2. **Step 2**: Expand port ranges (e.g., "3000-3005" → individual ports)
+3. **Step 3**: Add default group wrapper for ungrouped configurations
+4. **Step 4**: Convert port arrays to port-label objects
+5. **Step 5**: Normalize structure and validate final format
+
+## Basic Format (Simple Array - v0.3.6)
 ```json
 {
   "portMonitor.hosts": {
@@ -37,17 +47,15 @@ localhost:[🟢main:3000|🟢dev:3001|🔴8080|🔴9000]
   }
 }
 ```
-**Note**: Simple arrays automatically get wrapped with "__NOTITLE" group during processing.
+**Note**: Simple arrays automatically get wrapped with "__NOTITLE" group during Step 3 processing.
 
-### Category-Based Format (v0.3.3 - Intelligent Processing)
+### Category-Based Format (v0.3.6 - 5-Step Processing)
 ```json
 {
   "portMonitor.hosts": {
-    "localhost": {
-      "Next.js": [3000, 3001, "3002-3009"],
-      "Web": ["http", "https"]
-    },
-    "127.0.0.1": {
+    "Next.js": [3000, 3001, "3002-3009"],
+    "Web Services": ["http", "https"],
+    "Remote Services": {
       "Services": ["ssh", "postgresql"],
       "Development": ["8080-8090"]
     }
@@ -55,7 +63,7 @@ localhost:[🟢main:3000|🟢dev:3001|🔴8080|🔴9000]
 }
 ```
 
-### Mixed Format (v0.3.3 - All Formats Supported)
+### Mixed Format (v0.3.6 - All Formats Supported)
 ```json
 {
   "portMonitor.hosts": {

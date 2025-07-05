@@ -13,7 +13,7 @@ Comparison with existing VS Code extensions:
 | `njzy.stats-bar` | System statistics display | Network speed only, no port monitoring |
 
 ### Unique Value
-- ✅ **Intelligent configuration processing** - 4-step automatic transformation of any input format
+- ✅ **Intelligent configuration processing** - 5-step automatic transformation of any input format
 - ✅ **Zero external dependencies** - Native Node.js implementation for better security
 - ✅ **Multiple host/port simultaneous monitoring** - Feature not available in existing extensions
 - ✅ **Real-time status display** - Continuous monitoring in status bar
@@ -27,21 +27,30 @@ Comparison with existing VS Code extensions:
 - Can monitor multiple hosts and multiple ports simultaneously
 - Supports multiple configuration formats that are automatically processed:
   - **Simple arrays**: `[3000, 3001, "3002-3009"]`
-  - **Grouped configurations**: `{"localhost": {"Development": {3000: "app"}}}`
+  - **Grouped configurations**: `{"Development": {"3000": "app", "__CONFIG": {...}}}`
   - **Mixed formats**: Arrays with well-known names and ranges
 - Ports can be specified as:
   - Number: `3000`
   - Range: `"3000-3009"`
   - Well-known names: `"http"`, `"https"`, `"ssh"`, `"postgresql"`, etc.
-- **Intelligent Configuration Processing**: 4-step automatic transformation:
+- **Intelligent Configuration Processing**: 5-step automatic transformation:
   1. **Well-known ports replacement**: `"http"` → `80`, `"https"` → `443`, etc.
-  2. **Smart default grouping**: Simple arrays get `"__NOTITLE"` wrapper for organization
-  3. **Port range expansion**: `"3002-3009"` → individual ports `3002, 3003, 3004...`
-  4. **Array normalization**: `[3000, 3001]` → `{"3000": "", "3001": ""}` for consistent processing
+  2. **Port range expansion**: `"3002-3009"` → individual ports `3002, 3003, 3004...`
+  3. **Smart default grouping**: Simple arrays get `"__NOTITLE"` wrapper for organization
+  4. **Array to object conversion**: `[3000, 3001]` → `{"3000": "", "3001": ""}` for consistent processing
+  5. **Structure normalization**: Validate and clean final configuration format
+- Group-level configuration with `__CONFIG` key:
+  - `compact`: Enable compact display for port ranges
+  - `bgcolor`: Background color for the group
+  - `separator`: Custom separator character
+  - `show_title`: Whether to show group title
 - Port labeling:
   - Direct assignment in grouped format: `{"3000": "app", "3001": "api"}`
   - Pattern-based via `portLabels`: `{"300*": "dev-env"}`
   - Displayed as `label:port_suffix` format
+- Group configuration options:
+  - `__CONFIG` key within groups for display settings
+  - Supports `compact`, `bgcolor`, `separator`, `show_title` options
 
 ### Display Format
 - Displayed in status bar in the following format:
@@ -70,12 +79,19 @@ Comparison with existing VS Code extensions:
 ```json
 {
   "portMonitor.hosts": {
-    "localhost": {
-      "Web Services": ["http", "https"],
-      "Development": [3000, "3001-3003"]
+    "Web Services": {
+      "80": "http",
+      "443": "https",
+      "__CONFIG": {
+        "compact": true,
+        "show_title": true
+      }
     },
-    "db-server.local": {
-      "Database": ["postgresql"]
+    "Development": {
+      "3000": "main-app",
+      "3001": "api-server",
+      "3002": "test-env",
+      "3003": "staging"
     }
   },
   "portMonitor.statusIcons": {
@@ -106,6 +122,29 @@ Comparison with existing VS Code extensions:
   "portMonitor.hosts": {
     "Development": [3000, 3001, "3002-3009"],
     "Services": ["http", "https", "ssh"]
+  }
+}
+```
+
+### Group Configuration with __CONFIG
+```json
+{
+  "portMonitor.hosts": {
+    "Development": {
+      "3000": "react-app",
+      "3001": "vue-app",
+      "3007": "test-server",
+      "__CONFIG": {
+        "compact": true,
+        "bgcolor": "#ffcccc",
+        "separator": "|",
+        "show_title": false
+      }
+    },
+    "Database": {
+      "5432": "postgres",
+      "6379": "redis"
+    }
   }
 }
 ```
@@ -174,12 +213,12 @@ The following patterns are available in `portMonitor.portLabels`:
 ```json
 {
   "portMonitor.hosts": {
-    "localhost": {
-      "Applications": {
-        "3000": "user",
-        "3001": "car",
-        "3002-3004": "services"
-      }
+    "Applications": {
+      "3000": "user",
+      "3001": "car",
+      "3002": "services",
+      "3003": "services",
+      "3004": "services"
     }
   }
 }
@@ -193,7 +232,8 @@ The following patterns are available in `portMonitor.portLabels`:
   },
   "portMonitor.portLabels": {
     "3000": "user",
-    "3001": "car"
+    "3001": "car",
+    "300*": "dev-services"
   }
 }
 ```
@@ -202,13 +242,20 @@ The following patterns are available in `portMonitor.portLabels`:
 ```json
 {
   "portMonitor.hosts": {
-    "localhost": [3000, 5432, 8080],
-    "api-server": [9000, 9001]
-  },
-  "portMonitor.displayOptions": {
-    "separator": " • ",              // Change separator character
-    "showFullPortNumber": true,      // Show full port numbers
-    "compactRanges": false           // Disable range compression
+    "Local Development": {
+      "3000": "frontend",
+      "5432": "database",
+      "8080": "api",
+      "__CONFIG": {
+        "separator": " • ",
+        "compact": false,
+        "show_title": true
+      }
+    },
+    "Remote APIs": {
+      "9000": "auth-service",
+      "9001": "user-service"
+    }
   }
 }
 ```
@@ -222,13 +269,14 @@ The following patterns are available in `portMonitor.portLabels`:
 ```json
 {
   "portMonitor.hosts": {
-    "localhost": ["3000-3009", "8000-8009"]
+    "Development": ["3000-3009"],
+    "Testing": ["8000-8009"]
   },
   "portMonitor.portLabels": {
-    "3000": "main-app",    // Port 3000 is "main-app"
-    "300*": "dev-env",     // 3001-3009 are "dev-env"
-    "800*": "test-env",    // 8000-8009 are "test-env"
-    "*": "unknown"         // Others are "unknown"
+    "3000": "main-app",
+    "300*": "dev-env",
+    "800*": "test-env",
+    "*": "unknown"
   }
 }
 ```

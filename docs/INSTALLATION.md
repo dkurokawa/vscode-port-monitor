@@ -3,8 +3,8 @@
 ## Generated Files
 
 ✅ **VSIX package ready for installation!**
-- Current version: `vscode-port-monitor-0.3.5.vsix`
-- Features: Zero dependencies, 4-step intelligent configuration processing, smart error detection
+- Current version: `vscode-port-monitor-0.3.6.vsix`
+- Features: Zero dependencies, 5-step intelligent configuration processing, smart error detection
 - Files included: Core functionality only (optimized for performance)
 
 ## Extension Testing Methods
@@ -25,11 +25,11 @@
 
 ### Method 3: VS Code Command Line (if code command is available)
 ```bash
-code --install-extension vscode-port-monitor-0.3.5.vsix
+code --install-extension vscode-port-monitor-0.3.6.vsix
 ```
 
 ### 🚀 How to use in other projects
-1. **Copy VSIX file**: Copy `vscode-port-monitor-0.3.5.vsix` to other project folders
+1. **Copy VSIX file**: Copy `vscode-port-monitor-0.3.6.vsix` to other project folders
 2. **Install from VSIX**: Install using Method 2 above
 3. **Add configuration**: Add settings to each project's `settings.json`
 4. **Start using immediately**: Port monitoring will start in the status bar
@@ -38,7 +38,7 @@ code --install-extension vscode-port-monitor-0.3.5.vsix
 
 ## Test Configuration Examples
 
-### Next.js Development Environment (v0.3.5 - Smart Error Detection)
+### Next.js Development Environment (v0.3.6 - 5-Step Processing)
 Add the following to your settings file (settings.json):
 
 ```json
@@ -87,7 +87,7 @@ Add the following to your settings file (settings.json):
 }
 ```
 
-### ⚠️ Common Configuration Mistakes (v0.3.5)
+### ⚠️ Common Configuration Mistakes (v0.3.6)
 
 The extension now detects and provides helpful error messages for common mistakes:
 
@@ -287,12 +287,13 @@ npm run package
 }
 ```
 
-## New Features in v0.3.5
+## New Features in v0.3.6
 
-### 🔧 Smart Configuration Error Detection
-- **Automatic error detection**: Detects common configuration mistakes
-- **Helpful error messages**: Shows specific fix suggestions in status bar tooltip
-- **Real-time validation**: Errors are detected as you type in settings
+### 🔧 5-Step Configuration Processing
+- **Step-by-step processing**: Each transformation is handled individually for better maintainability
+- **Individual step testing**: Each processing step can be tested independently
+- **Better error isolation**: Issues are easier to identify and fix in specific steps
+- **Improved reliability**: Systematic approach reduces bugs and edge cases
 
 ### 📍 Status Bar Positioning  
 - **Configurable position**: Choose left or right alignment
@@ -303,3 +304,8 @@ npm run package
 - **Hidden system groups**: `__NOTITLE` prefixed groups don't show in display
 - **Multiple unnamed groups**: Support for `__NOTITLE1`, `__NOTITLE2`, etc.
 - **Cleaner display**: Removes clutter from status bar
+
+### 🔧 Smart Configuration Error Detection
+- **Automatic error detection**: Detects common configuration mistakes
+- **Helpful error messages**: Shows specific fix suggestions in status bar tooltip
+- **Real-time validation**: Errors are detected as you type in settings

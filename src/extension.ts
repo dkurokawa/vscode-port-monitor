@@ -109,6 +109,7 @@ export class PortMonitorExtension {
 
         // Parse configuration (mode support)
         const hostConfigs = ConfigManager.parseHostsConfig(config);
+        console.log('[PortMonitor] Parsed host configs:', hostConfigs);
 
         if (hostConfigs.length === 0) {
             // Check if there are configuration errors to show helpful messages
@@ -134,6 +135,7 @@ export class PortMonitorExtension {
     }
 
     private onPortStatusChanged(results: PortInfo[], config: PortMonitorConfig): void {
+        
         // Group by host and then by group for better organization
         const hostGroups = results.reduce((acc, port) => {
             if (!acc[port.host]) {
@@ -158,6 +160,7 @@ export class PortMonitorExtension {
                 const isCompact = groupConfigs?.compact === true;
                 const separator = groupConfigs?.separator || '|';
                 const showTitle = groupConfigs?.show_title !== false; // default true
+                
                 
                 if (isCompact) {
                     // Compact mode: find common prefix and create range display

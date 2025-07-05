@@ -1,5 +1,5 @@
 import * as net from 'net';
-import { PortInfo } from './config';
+import { PortInfo, GroupConfigs } from './config';
 
 /**
  * Simple port monitoring functionality
@@ -13,9 +13,10 @@ export class PortMonitor {
      * @param port Port number
      * @param label Port label
      * @param group Group name
+     * @param groupConfigs Group configuration
      * @returns PortInfo
      */
-    public async checkPort(host: string, port: number, label: string, group: string): Promise<PortInfo> {
+    public async checkPort(host: string, port: number, label: string, group: string, groupConfigs?: GroupConfigs): Promise<PortInfo> {
         try {
             const isOpen = await this.isPortOpen(host, port);
             const portInfo: PortInfo = {
@@ -23,6 +24,7 @@ export class PortMonitor {
                 port,
                 label,
                 group,
+                groupConfigs,
                 isOpen
             };
 
@@ -43,6 +45,7 @@ export class PortMonitor {
                 port,
                 label,
                 group,
+                groupConfigs,
                 isOpen: false
             };
         }
@@ -53,9 +56,9 @@ export class PortMonitor {
      * @param portConfigs Array of port configurations
      * @returns Array of PortInfo
      */
-    public async checkMultiplePorts(portConfigs: Array<{host: string; port: number; label: string; group: string}>): Promise<PortInfo[]> {
+    public async checkMultiplePorts(portConfigs: Array<{host: string; port: number; label: string; group: string; groupConfigs?: GroupConfigs}>): Promise<PortInfo[]> {
         const promises = portConfigs.map(config => 
-            this.checkPort(config.host, config.port, config.label, config.group)
+            this.checkPort(config.host, config.port, config.label, config.group, config.groupConfigs)
         );
         return Promise.all(promises);
     }
@@ -68,7 +71,7 @@ export class PortMonitor {
      * @returns Monitoring ID
      */
     public async startMonitoring(
-        portConfigs: Array<{host: string; port: number; label: string; group: string}>,
+        portConfigs: Array<{host: string; port: number; label: string; group: string; groupConfigs?: GroupConfigs}>,
         intervalMs: number,
         callback: (results: PortInfo[]) => void
     ): Promise<string> {

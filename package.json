@@ -2,7 +2,7 @@
   "name": "vscode-port-monitor",
   "displayName": "Port Monitor",
   "description": "Monitor multiple hosts and ports with real-time status display in VS Code status bar",
-  "version": "0.3.5",
+  "version": "0.3.7",
   "publisher": "dkurokawa",
   "license": "MIT",
   "repository": {

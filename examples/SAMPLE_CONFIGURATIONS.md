@@ -2,11 +2,12 @@
 
 Comprehensive examples of port monitoring configurations for different development environments. 
 
-**Note**: All configurations use the v0.3.3 intelligent processing system with 4-step automatic transformation:
+**Note**: All configurations use the v0.3.6 intelligent processing system with 5-step automatic transformation:
 1. **Well-known ports**: `"http"` → `80`, `"https"` → `443`, `"postgresql"` → `5432`, etc.
-2. **Smart grouping**: Simple arrays get organized automatically
-3. **Range expansion**: `"3000-3009"` → individual ports `3000, 3001, 3002...`
-4. **Format normalization**: All formats converted to consistent internal structure
+2. **Port range expansion**: `"3000-3009"` → individual ports `3000, 3001, 3002...`
+3. **Smart grouping**: Simple arrays get organized automatically
+4. **Array to object conversion**: `[3000, 3001]` → `{"3000": "", "3001": ""}`
+5. **Structure normalization**: All formats converted to consistent internal structure
 
 ## 📋 Port Usage Patterns by Development Environment
 
@@ -76,21 +77,23 @@ Comprehensive examples of port monitoring configurations for different developme
 ```json
 {
   "portMonitor.hosts": {
-    "localhost": {
-      "Next.js": {
-        "3000": "Main App",
-        "3001": "Admin Panel",
-        "3002": "Storybook",
-        "3003": "API Docs",
-        "3004-3009": "Feature Branches"
+    "Next.js": {
+      "3000": "Main App",
+      "3001": "Admin Panel",
+      "3002": "Storybook",
+      "3003": "API Docs",
+      "3004": "Feature Branches",
+      "3005": "Feature Branches",
+      "3006": "Feature Branches",
+      "3007": "Feature Branches",
+      "3008": "Feature Branches",
+      "3009": "Feature Branches",
+      "__CONFIG": {
+        "separator": " | ",
+        "compact": true,
+        "show_title": true
       }
     }
-  },
-  "portMonitor.displayOptions": {
-    "separator": " | ",
-    "compactRanges": true,
-    "showFullPortNumber": false,
-    "maxDisplayLength": 150
   }
 }
 ```
@@ -115,21 +118,28 @@ Comprehensive examples of port monitoring configurations for different developme
 ```json
 {
   "portMonitor.hosts": {
-    "localhost": {
-      "Frontend": {
-        "3000": "React App",
-        "3001": "Admin Dashboard",
-        "6006": "Storybook"
-      },
-      "Backend": {
-        "5000": "Express API",
-        "5001": "Auth Service",
-        "4000": "GraphQL"
-      },
-      "Database": {
-        "27017": "MongoDB",
-        "6379": "Redis"
+    "Frontend": {
+      "3000": "React App",
+      "3001": "Admin Dashboard",
+      "6006": "Storybook",
+      "__CONFIG": {
+        "compact": true,
+        "bgcolor": "#e6f3ff",
+        "show_title": true
       }
+    },
+    "Backend": {
+      "5000": "Express API",
+      "5001": "Auth Service",
+      "4000": "GraphQL",
+      "__CONFIG": {
+        "compact": false,
+        "bgcolor": "#fff2e6"
+      }
+    },
+    "Database": {
+      "27017": "MongoDB",
+      "6379": "Redis"
     }
   }
 }
@@ -139,24 +149,37 @@ Comprehensive examples of port monitoring configurations for different developme
 ```json
 {
   "portMonitor.hosts": {
-    "localhost": {
-      "API Gateway": [8080, 8000],
-      "Core Services": ["3001-3005"],
-      "Databases": ["postgresql", "mysql", "mongodb", "redis"],
-      "DevTools": [6006, 4000, 9200]
+    "API Gateway": {
+      "8080": "Main Gateway",
+      "8000": "Admin Gateway",
+      "__CONFIG": {
+        "compact": false,
+        "bgcolor": "#ffebe6",
+        "show_title": true
+      }
+    },
+    "Core Services": {
+      "3001": "Auth Service",
+      "3002": "User Service",
+      "3003": "Product Service",
+      "3004": "Payment Service",
+      "3005": "Notification Service",
+      "__CONFIG": {
+        "compact": true,
+        "separator": " • "
+      }
+    },
+    "Databases": {
+      "5432": "postgresql",
+      "3306": "mysql",
+      "27017": "mongodb",
+      "6379": "redis"
+    },
+    "DevTools": {
+      "6006": "Storybook",
+      "4000": "GraphQL Playground",
+      "9200": "Elasticsearch"
     }
-  },
-  "portMonitor.portLabels": {
-    "8080": "Main Gateway",
-    "8000": "Admin Gateway",
-    "3001": "Auth Service",
-    "3002": "User Service",
-    "3003": "Product Service",
-    "3004": "Payment Service",
-    "3005": "Notification Service",
-    "6006": "Storybook",
-    "4000": "GraphQL Playground",
-    "9200": "Elasticsearch"
   }
 }
 ```
@@ -166,31 +189,37 @@ Comprehensive examples of port monitoring configurations for different developme
 {
   "portMonitor.hosts": {
     "React Projects": {
-      "localhost": [3000, 3001, 3002]
+      "3000": "React (Main)",
+      "3001": "React (Feature)",
+      "3002": "React (Experimental)",
+      "__CONFIG": {
+        "compact": true,
+        "bgcolor": "#61dafb"
+      }
     },
     "Vue Projects": {
-      "localhost": [8080, 8081, 8082]
+      "8080": "Vue (Main)",
+      "8081": "Vue (Admin)",
+      "8082": "Vue (Mobile)",
+      "__CONFIG": {
+        "compact": true,
+        "bgcolor": "#4fc08d"
+      }
     },
     "Angular Projects": {
-      "localhost": [4200, 4201, 4202]
+      "4200": "Angular (Main)",
+      "4201": "Angular (Admin)",
+      "4202": "Angular (Components)",
+      "__CONFIG": {
+        "compact": true,
+        "bgcolor": "#dd0031"
+      }
     },
     "Backend APIs": {
-      "localhost": [5000, 8000, 7000]
+      "5000": "Flask API",
+      "8000": "Django API",
+      "7000": "ASP.NET API"
     }
-  },
-  "portMonitor.portLabels": {
-    "3000": "React (Main)",
-    "3001": "React (Feature)",
-    "3002": "React (Experimental)",
-    "8080": "Vue (Main)",
-    "8081": "Vue (Admin)",
-    "8082": "Vue (Mobile)",
-    "4200": "Angular (Main)",
-    "4201": "Angular (Admin)",
-    "4202": "Angular (Components)",
-    "5000": "Flask API",
-    "8000": "Django API",
-    "7000": "ASP.NET API"
   }
 }
 ```
@@ -200,29 +229,35 @@ Comprehensive examples of port monitoring configurations for different developme
 {
   "portMonitor.hosts": {
     "Local Development": {
-      "localhost": [3000, 3001, 5000, 5432, 6379]
+      "3000": "Next.js Dev",
+      "3001": "Next.js Preview",
+      "5000": "API Dev",
+      "5432": "PostgreSQL",
+      "6379": "Redis",
+      "__CONFIG": {
+        "separator": " • ",
+        "compact": true,
+        "bgcolor": "#e6ffe6"
+      }
     },
     "Staging Environment": {
-      "staging.example.com": [80, 443, 5432]
+      "80": "HTTP",
+      "443": "HTTPS",
+      "5432": "Database",
+      "__CONFIG": {
+        "bgcolor": "#fff9e6",
+        "show_title": true
+      }
     },
     "Production Health Check": {
-      "api.example.com": [80, 443],
-      "db.example.com": [5432]
+      "80": "API HTTP",
+      "443": "API HTTPS",
+      "5432": "DB Server",
+      "__CONFIG": {
+        "bgcolor": "#ffe6e6",
+        "show_title": true
+      }
     }
-  },
-  "portMonitor.portLabels": {
-    "3000": "Next.js Dev",
-    "3001": "Next.js Preview",
-    "5000": "API Dev",
-    "5432": "PostgreSQL",
-    "6379": "Redis",
-    "80": "HTTP",
-    "443": "HTTPS"
-  },
-  "portMonitor.displayOptions": {
-    "separator": " • ",
-    "maxDisplayLength": 200,
-    "compactRanges": true
   }
 }
 ```
@@ -232,33 +267,39 @@ Comprehensive examples of port monitoring configurations for different developme
 {
   "portMonitor.hosts": {
     "Web Services": {
-      "localhost": [3000, 8080, 8000]
+      "3000": "Frontend",
+      "8080": "API Gateway",
+      "8000": "Admin Panel",
+      "__CONFIG": {
+        "compact": false,
+        "bgcolor": "#e6f7ff"
+      }
     },
     "Databases": {
-      "localhost": [5432, 3306, 27017, 6379]
+      "5432": "PostgreSQL",
+      "3306": "MySQL",
+      "27017": "MongoDB",
+      "6379": "Redis",
+      "__CONFIG": {
+        "compact": true,
+        "bgcolor": "#f0f8e6"
+      }
     },
     "Message Queues": {
-      "localhost": [5672, 15672, 9092]
+      "5672": "RabbitMQ",
+      "15672": "RabbitMQ Management",
+      "9092": "Kafka"
     },
     "Monitoring": {
-      "localhost": [9090, 3001, 9200, 5601]
+      "9090": "Prometheus",
+      "3001": "Grafana",
+      "9200": "Elasticsearch",
+      "5601": "Kibana",
+      "__CONFIG": {
+        "separator": " | ",
+        "show_title": true
+      }
     }
-  },
-  "portMonitor.portLabels": {
-    "3000": "Frontend",
-    "8080": "API Gateway",
-    "8000": "Admin Panel",
-    "5432": "PostgreSQL",
-    "3306": "MySQL",
-    "27017": "MongoDB",
-    "6379": "Redis",
-    "5672": "RabbitMQ",
-    "15672": "RabbitMQ Management",
-    "9092": "Kafka",
-    "9090": "Prometheus",
-    "3001": "Grafana",
-    "9200": "Elasticsearch",
-    "5601": "Kibana"
   }
 }
 ```
@@ -268,23 +309,23 @@ Comprehensive examples of port monitoring configurations for different developme
 {
   "portMonitor.hosts": {
     "React Native": {
-      "localhost": [8081, 19000, 19001, 19002]
+      "8081": "Metro Bundler",
+      "19000": "Expo DevTools",
+      "19001": "Expo iOS",
+      "19002": "Expo Android",
+      "__CONFIG": {
+        "compact": true,
+        "bgcolor": "#20232a"
+      }
     },
-    "Metro Bundler": {
-      "localhost": [8080, 8081]
+    "Development Tools": {
+      "8080": "Flipper",
+      "8081": "Metro (Alt)"
     },
     "Backend APIs": {
-      "localhost": [3000, 5000]
+      "3000": "API Server",
+      "5000": "Mock Server"
     }
-  },
-  "portMonitor.portLabels": {
-    "8081": "Metro Bundler",
-    "19000": "Expo DevTools",
-    "19001": "Expo iOS",
-    "19002": "Expo Android",
-    "8080": "Flipper",
-    "3000": "API Server",
-    "5000": "Mock Server"
   }
 }
 ```
@@ -294,24 +335,24 @@ Comprehensive examples of port monitoring configurations for different developme
 {
   "portMonitor.hosts": {
     "WordPress Sites": {
-      "localhost": [8080, 8081, 8082, 8083]
+      "8080": "Main Site",
+      "8081": "Staging Site",
+      "8082": "Dev Site",
+      "8083": "Test Site",
+      "__CONFIG": {
+        "compact": true,
+        "separator": " | ",
+        "show_title": true
+      }
     },
     "Database": {
-      "localhost": [3306]
+      "3306": "MySQL"
     },
     "Development Tools": {
-      "localhost": [1025, 8025, 3000]
+      "1025": "MailHog SMTP",
+      "8025": "MailHog Web",
+      "3000": "BrowserSync"
     }
-  },
-  "portMonitor.portLabels": {
-    "8080": "Main Site",
-    "8081": "Staging Site",
-    "8082": "Dev Site",
-    "8083": "Test Site",
-    "3306": "MySQL",
-    "1025": "MailHog SMTP",
-    "8025": "MailHog Web",
-    "3000": "BrowserSync"
   }
 }
 ```
@@ -320,26 +361,29 @@ Comprehensive examples of port monitoring configurations for different developme
 ```json
 {
   "portMonitor.hosts": {
-    "Jupyter Notebooks": {
-      "localhost": [8888, 8889, 8890]
+    "Jupyter Environment": {
+      "8888": "Jupyter Lab",
+      "8889": "Jupyter Notebook",
+      "8890": "JupyterHub",
+      "__CONFIG": {
+        "compact": true,
+        "bgcolor": "#f37626"
+      }
     },
     "ML APIs": {
-      "localhost": [5000, 5001, 8000]
+      "5000": "Flask ML API",
+      "5001": "FastAPI ML",
+      "8000": "Django ML",
+      "__CONFIG": {
+        "compact": false,
+        "separator": " • "
+      }
     },
     "Monitoring": {
-      "localhost": [6006, 4040, 8080]
+      "6006": "TensorBoard",
+      "4040": "Spark UI",
+      "8080": "MLflow"
     }
-  },
-  "portMonitor.portLabels": {
-    "8888": "Jupyter Lab",
-    "8889": "Jupyter Notebook",
-    "8890": "JupyterHub",
-    "5000": "Flask ML API",
-    "5001": "FastAPI ML",
-    "8000": "Django ML",
-    "6006": "TensorBoard",
-    "4040": "Spark UI",
-    "8080": "MLflow"
   }
 }
 ```
@@ -349,23 +393,23 @@ Comprehensive examples of port monitoring configurations for different developme
 {
   "portMonitor.hosts": {
     "Game Servers": {
-      "localhost": [7777, 7778, 7779]
+      "7777": "Game Server",
+      "7778": "Match Making",
+      "7779": "Lobby Server",
+      "__CONFIG": {
+        "compact": true,
+        "bgcolor": "#000000",
+        "separator": " | "
+      }
     },
     "Web Services": {
-      "localhost": [3000, 8080]
+      "3000": "Admin Dashboard",
+      "8080": "API Gateway"
     },
     "Analytics": {
-      "localhost": [9090, 3001]
+      "9090": "Metrics",
+      "3001": "Analytics Dashboard"
     }
-  },
-  "portMonitor.portLabels": {
-    "7777": "Game Server",
-    "7778": "Match Making",
-    "7779": "Lobby Server",
-    "3000": "Admin Dashboard",
-    "8080": "API Gateway",
-    "9090": "Metrics",
-    "3001": "Analytics Dashboard"
   }
 }
 ```

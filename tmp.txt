@@ -1,0 +1,37 @@
+[Extension Host] Created lock file at /Users/kurokawadaisuke/.claude/ide/63134.lock (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+console.ts:137 [Extension Host] Set CLAUDE_CODE_SSE_PORT=63134 in terminal environment (in-memory) (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+console.ts:137 [Extension Host] Set ENABLE_IDE_INTEGRATION=true in terminal environment (in-memory) (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+console.ts:137 [Extension Host] NODE_ENV undefined (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+log.ts:450  WARN Authentication provider continue was not declared in the Extension Manifest.
+warn @ log.ts:450
+warn @ log.ts:559
+warn @ logService.ts:47
+$registerAuthenticationProvider @ mainThreadAuthentication.ts:139
+S @ rpcProtocol.ts:458
+Q @ rpcProtocol.ts:443
+M @ rpcProtocol.ts:373
+L @ rpcProtocol.ts:308
+(anonymous) @ rpcProtocol.ts:161
+B @ event.ts:1219
+fire @ event.ts:1250
+fire @ ipc.net.ts:652
+l.onmessage @ localProcessExtensionHost.ts:382
+console.ts:137 [Extension Host] ChatGPT extension is now active! (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+console.ts:137 [Extension Host] Wrote payload to /Users/kurokawadaisuke/Library/Application Support/com.openai.chat/app_pairing_extensions/Visual Studio Code-fc67acbd-6813-4768-9408-c32400d095cf (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+console.ts:137 [Extension Host] Registered (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+console.ts:137 [Extension Host] Server listening on UNIX domain socket: /tmp/Visual Studio Code-fc67acbd-6813-4768-9408-c32400d095cf.sock (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+console.ts:137 [Extension Host] PortMonitor extension activating... (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+console.ts:137 [Extension Host] Initializing PortMonitorExtension... (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+console.ts:137 [Extension Host] Registering commands... (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+console.ts:137 [Extension Host] Commands registered successfully (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+console.ts:137 [Extension Host] [PortMonitor] Parsed host configs: (9) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}] (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+console.ts:137 [Extension Host] PortMonitorExtension initialized successfully (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+console.ts:137 [Extension Host] PortMonitor extension activated successfully (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+console.ts:137 [Extension Host] Client connected (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+console.ts:137 [Extension Host] Client message received: {"payload":{},"command":"ping"} (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+console.ts:137 [Extension Host] Client connected (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+console.ts:137 [Extension Host] Client message received: {"payload":{},"command":"ping"} (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+console.ts:137 [Extension Host] Found ChatGPT app info: {"isInstalled":true,"installPath":"/Applications/ChatGPT.app","bundleID":"com.openai.chat","version":{"options":{},"loose":false,"includePrerelease":false,"raw":"1.2025.168","major":1,"minor":2025,"patch":168,"prerelease":[],"build":[],"version":"1.2025.168"}}. Supports pairing: true (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+console.ts:137 [Extension Host] [PortMonitor] StatusBar displayText: katix: 300[🟢user:0|🟢car:1|🟢ai-cam:7] ab: 302[⚪️demo:0|⚪️az:1|⚪️ab:2|⚪️gd:3|⚪️sb:4|⚪️wd:5] (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+console.ts:137 [Extension Host] [PortMonitor] StatusBar displayText: katix: 300[🟢user:0|🟢car:1|🟢ai-cam:7] ab: 302[⚪️demo:0|⚪️az:1|⚪️ab:2|⚪️gd:3|⚪️sb:4|⚪️wd:5] (at console.<anonymous> (file:///Applications/Visual%20Studio%20Code.app/Contents/Resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:28720))
+
