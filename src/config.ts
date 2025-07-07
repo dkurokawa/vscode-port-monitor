@@ -18,9 +18,17 @@ export interface GroupConfigs {
 
 export type ProcessedHostsWithSettings = Record<string, GroupSettings & GroupConfigs>;
 
+export interface PortEmojiConfig {
+    prefix?: string;
+    replace?: string;
+    suffix?: string;
+}
+
 export interface PortMonitorConfig {
     hosts: ProcessedHostsWithSettings;
     portLabels?: Record<string, string>;
+    portEmojis?: Record<string, string | PortEmojiConfig>;
+    emojiMode?: 'prefix' | 'replace' | 'suffix';
     statusIcons: {
         inUse: string;
         free: string;
@@ -78,6 +86,8 @@ export class ConfigManager {
         const processedHosts = ConfigManager.processHostsConfig(configuredHosts);
         
         const portLabels = this.config.get<Record<string, string>>('portLabels') || {};
+        const portEmojis = this.config.get<Record<string, string | PortEmojiConfig>>('portEmojis') || {};
+        const emojiMode = this.config.get<'prefix' | 'replace' | 'suffix'>('emojiMode') || 'replace';
         
         // statusIcons: use configured value or default, with backward compatibility
         const rawStatusIcons = this.config.get<any>('statusIcons');
@@ -102,6 +112,8 @@ export class ConfigManager {
         return {
             hosts: processedHosts,
             portLabels,
+            portEmojis,
+            emojiMode,
             statusIcons,
             intervalMs: Math.max(1000, intervalMs !== undefined ? intervalMs : 3000),
             backgroundColor,

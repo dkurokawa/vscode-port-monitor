@@ -51,13 +51,22 @@ Comparison with existing VS Code extensions:
 - Group configuration options:
   - `__CONFIG` key within groups for display settings
   - Supports `compact`, `bgcolor`, `separator`, `show_title` options
+- Port emoji customization:
+  - Simple format: `{"car": "🚗"}` - uses global `emojiMode`
+  - Individual format: `{"user": {"prefix": "🙂"}}` - per-port mode override
+  - Supported modes: `prefix`, `replace`, `suffix`
+  - Replace mode: emoji replaces in-use icon, free ports keep standard icon
 
 ### Display Format
 - Displayed in status bar in the following format:
   ```
-  localhost: 300[🟢user:0|⚪️car:1|⚪️2|⚪️3|🟢4]
+  localhost: 300[🙂🟢user:0|🚗car:1|⚪️2|⚪️3|🧪test:4]
   db-server.local: [⚪️postgresql:5432]
   ```
+- With emoji configuration:
+  - `prefix` mode: `🙂🟢user:3001`
+  - `replace` mode: `🚗car:3001` (in-use) / `⚪️car:3001` (free)
+  - `suffix` mode: `🟢user🙂:3001`
 - Port suffix/full number display format and icons (🟢⚪️) are customizable
 - When a port has a label, displayed as "label:port_suffix" format
 - Non-range ports also display full port numbers
@@ -98,6 +107,12 @@ Comparison with existing VS Code extensions:
     "inUse": "🟢",
     "free": "⚪️"
   },
+  "portMonitor.portEmojis": {
+    "main-app": "🚀",
+    "api-server": { "prefix": "🔧" },
+    "test-env": { "replace": "🧪" }
+  },
+  "portMonitor.emojiMode": "replace",
   "portMonitor.intervalMs": 3000,
   "portMonitor.portLabels": {
     "3000": "user",

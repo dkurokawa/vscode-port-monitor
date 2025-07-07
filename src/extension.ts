@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ConfigManager, PortInfo, PortMonitorConfig } from './config';
+import { ConfigManager, PortInfo, PortMonitorConfig, PortEmojiConfig } from './config';
 import { PortMonitor } from './monitor';
 
 export class PortMonitorExtension {
@@ -164,7 +164,7 @@ export class PortMonitorExtension {
                 
                 if (isCompact) {
                     // Compact mode: find common prefix and create range display
-                    const compactDisplay = this.createCompactDisplay(ports, config.statusIcons, separator);
+                    const compactDisplay = this.createCompactDisplay(ports, config.statusIcons, separator, config.portEmojis, config.emojiMode);
                     
                     if (groupName.startsWith('__NOTITLE') || groupName === '' || !showTitle) {
                         groupDisplays.push(compactDisplay);
@@ -173,10 +173,7 @@ export class PortMonitorExtension {
                     }
                 } else {
                     // Normal mode: individual port display
-                    const portDisplays = ports.map(port => {
-                        const icon = port.isOpen ? config.statusIcons.inUse : config.statusIcons.free;
-                        return `${icon}${port.label}:${port.port}`;
-                    });
+                    const portDisplays = ports.map(port => this.formatPortDisplay(port, config.statusIcons, config.portEmojis, config.emojiMode));
                     
                     if (groupName.startsWith('__NOTITLE') || groupName === '' || !showTitle) {
                         groupDisplays.push(portDisplays.join(' '));
@@ -233,7 +230,43 @@ export class PortMonitorExtension {
         this.statusBarItem.backgroundColor = backgroundColor ? new vscode.ThemeColor(backgroundColor) : undefined;
     }
 
-    private createCompactDisplay(ports: PortInfo[], statusIcons: { inUse: string; free: string }, separator: string): string {
+    private formatPortDisplay(port: PortInfo, statusIcons: { inUse: string; free: string }, portEmojis?: Record<string, string | PortEmojiConfig>, emojiMode: 'prefix' | 'replace' | 'suffix' = 'replace'): string {
+        const emojiConfig = portEmojis?.[port.label];
+        const statusIcon = port.isOpen ? statusIcons.inUse : statusIcons.free;
+        
+        if (emojiConfig) {
+            // Handle both string and object formats
+            if (typeof emojiConfig === 'string') {
+                // Simple format: "car": "🚗" - use global emojiMode with defaulting to replace
+                const emoji = emojiConfig;
+                switch (emojiMode) {
+                    case 'prefix':
+                        return `${emoji}${statusIcon}${port.label}:${port.port}`;
+                    case 'replace':
+                        // Use emoji for inUse ports, keep free icon for free ports
+                        const displayIcon = port.isOpen ? emoji : statusIcons.free;
+                        return `${displayIcon}${port.label}:${port.port}`;
+                    case 'suffix':
+                        return `${statusIcon}${port.label}${emoji}:${port.port}`;
+                }
+            } else {
+                // Detailed format: "user": {"prefix": "🙂"} - individual mode setting
+                if (emojiConfig.prefix) {
+                    return `${emojiConfig.prefix}${statusIcon}${port.label}:${port.port}`;
+                } else if (emojiConfig.replace) {
+                    const displayIcon = port.isOpen ? emojiConfig.replace : statusIcons.free;
+                    return `${displayIcon}${port.label}:${port.port}`;
+                } else if (emojiConfig.suffix) {
+                    return `${statusIcon}${port.label}${emojiConfig.suffix}:${port.port}`;
+                }
+            }
+        }
+        
+        // Fallback to normal display
+        return `${statusIcon}${port.label}:${port.port}`;
+    }
+
+    private createCompactDisplay(ports: PortInfo[], statusIcons: { inUse: string; free: string }, separator: string, portEmojis?: Record<string, string | PortEmojiConfig>, emojiMode: 'prefix' | 'replace' | 'suffix' = 'replace'): string {
         if (ports.length === 0) return '';
         
         // Find common prefix for port numbers
@@ -255,19 +288,16 @@ export class PortMonitorExtension {
         // If common prefix is meaningful (at least 2 digits), use compact format
         if (commonPrefix.length >= 2) {
             const portDisplays = ports.map(port => {
-                const icon = port.isOpen ? statusIcons.inUse : statusIcons.free;
                 const suffix = port.port.toString().substring(commonPrefix.length);
-                const label = port.label ? `${port.label}:` : '';
-                return `${icon}${label}${suffix}`;
+                const tempPort = { ...port, port: parseInt(suffix) || port.port };
+                const display = this.formatPortDisplay(tempPort, statusIcons, portEmojis, emojiMode);
+                return display.replace(`:${tempPort.port}`, `:${suffix}`);
             });
             
             return `${commonPrefix}[${portDisplays.join(separator)}]`;
         } else {
             // Fall back to normal display if no meaningful prefix
-            const portDisplays = ports.map(port => {
-                const icon = port.isOpen ? statusIcons.inUse : statusIcons.free;
-                return `${icon}${port.label}:${port.port}`;
-            });
+            const portDisplays = ports.map(port => this.formatPortDisplay(port, statusIcons, portEmojis, emojiMode));
             
             return `[${portDisplays.join(separator)}]`;
         }

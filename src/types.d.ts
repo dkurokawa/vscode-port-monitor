@@ -6,9 +6,17 @@ declare module 'tcp-port-used' {
     export function waitUntilUsedOnHost(port: number, host: string, retryTimeMs?: number, timeOutMs?: number): Promise<void>;
 }
 
+export interface PortEmojiConfig {
+    prefix?: string;
+    replace?: string;
+    suffix?: string;
+}
+
 export interface PortMonitorConfig {
     hosts: Record<string, (string | number)[] | Record<string, (string | number)[]>>;
     portLabels: Record<string, string>;
+    portEmojis?: Record<string, string | PortEmojiConfig>;
+    emojiMode?: 'prefix' | 'replace' | 'suffix';
     statusIcons: { inUse: string; free: string };
     intervalMs: number;
     enableProcessKill: boolean;

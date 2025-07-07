@@ -225,6 +225,8 @@ The extension uses a 5-step intelligent processing system:
 |---------|-------------|---------|
 | `portMonitor.hosts` | Monitored host and port targets (supports multiple formats) | `{}` |
 | `portMonitor.portLabels` | Port labels (patterns supported for advanced labeling) | `{}` |
+| `portMonitor.portEmojis` | Custom emojis for specific port labels | `{}` |
+| `portMonitor.emojiMode` | How to display port emojis (prefix/replace/suffix) | `"replace"` |
 | `portMonitor.statusIcons` | Status icon settings | `{ "inUse": "🟢", "free": "⚪️" }` |
 | `portMonitor.backgroundColor` | Status bar background color | none |
 | `portMonitor.portColors` | Background color per port | none |
@@ -255,55 +257,22 @@ The extension uses a 5-step intelligent processing system:
 
 
 
-## 📝 Additional Configuration Examples
+## 📝 Configuration Examples
 
-### Basic Multi-Host Setup
+### Custom Port Emojis
+
 ```json
 {
-  "portMonitor.hosts": {
-    "localhost": {
-      "Applications": {
-        "3000": "app",
-        "3001": "api",
-        "5432": "db"
-      }
-    },
-    "production.example.com": {
-      "Web Services": ["http", "https"]
-    }
+  "portMonitor.portEmojis": {
+    "car": "🚗",                    // Simple format
+    "user": { "prefix": "🙂" }      // Individual mode
   }
 }
 ```
 
-### Advanced with Pattern Labels
-```json
-{
-  "portMonitor.hosts": {
-    "localhost": ["3000-3009", "8080"]
-  },
-  "portMonitor.portLabels": {
-    "3000": "main-app",
-    "300*": "dev-env",
-    "8080": "proxy"
-  }
-}
-```
+Display: `🚗car:3000 🙂🟢user:3001`
 
-### Display Customization
-```json
-{
-  "portMonitor.displayOptions": {
-    "separator": " • ",
-    "showFullPortNumber": true,
-    "compactRanges": false
-  }
-}
-```
-
-**Display Examples**:
-- Default: `localhost: 300[🟢0|⚪️1|⚪️2]`
-- Custom: `localhost: [🟢3000 • ⚪️3001 • ⚪️3002]`
-- Single port: `db-server: [⚪️postgresql:5432]`
+**Comprehensive examples and advanced configurations:** [docs/SETTING_SAMPLES.md](docs/SETTING_SAMPLES.md)
 
 ## 🔧 Configuration Error Detection
 
