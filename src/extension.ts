@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ConfigManager, PortInfo, PortMonitorConfig, PortEmojiConfig, GroupConfigs } from './config';
+import { ConfigManager, PortInfo, PortMonitorConfig, PortEmojiConfig, GroupConfigs, ProcessInfo } from './config';
 import { PortMonitor } from './monitor';
 
 interface PortObject {
@@ -27,6 +27,7 @@ export class PortMonitorExtension {
         backgroundColor?: string;
         globalEmojiMode: 'prefix' | 'replace' | 'suffix';
     } | null = null;
+    private currentPortResults: PortInfo[] = [];
 
     constructor(private _context: vscode.ExtensionContext) {
         try {
@@ -38,7 +39,7 @@ export class PortMonitorExtension {
             const initialConfig = this.configManager.getConfig();
             const alignment = initialConfig.statusBarPosition === 'left' ? vscode.StatusBarAlignment.Left : vscode.StatusBarAlignment.Right;
             this.statusBarItem = vscode.window.createStatusBarItem(alignment, 200);
-            this.statusBarItem.command = 'portMonitor.refresh';
+            this.statusBarItem.command = 'portMonitor.showPortSelector';
             this.statusBarItem.show();
             
             this.initialize();
@@ -71,7 +72,8 @@ export class PortMonitorExtension {
             const commands = [
                 vscode.commands.registerCommand('portMonitor.refresh', () => this.refreshPortStatus()),
                 vscode.commands.registerCommand('portMonitor.showLog', (portInfo?: PortInfo) => this.showProcessLog(portInfo)),
-                vscode.commands.registerCommand('portMonitor.openSettings', () => this.openSettings())
+                vscode.commands.registerCommand('portMonitor.openSettings', () => this.openSettings()),
+                vscode.commands.registerCommand('portMonitor.showPortSelector', () => this.showPortSelector())
             ];
 
             this.disposables.push(...commands);
@@ -114,7 +116,7 @@ export class PortMonitorExtension {
             this.statusBarItem.dispose();
             
             this.statusBarItem = vscode.window.createStatusBarItem(newAlignment, 200);
-            this.statusBarItem.command = 'portMonitor.refresh';
+            this.statusBarItem.command = 'portMonitor.showPortSelector';
             this.statusBarItem.text = currentText;
             this.statusBarItem.tooltip = currentTooltip;
             this.statusBarItem.show();
@@ -300,6 +302,9 @@ export class PortMonitorExtension {
             return;
         }
 
+        // Store current port results for port selector
+        this.currentPortResults = results;
+        
         // Update port status in portObjects
         for (const result of results) {
             const portKey = result.port.toString();
@@ -484,24 +489,206 @@ export class PortMonitorExtension {
         }
 
         if (!portInfo.isOpen) {
-            vscode.window.showInformationMessage('Port is not in use');
+            vscode.window.showInformationMessage(`Port ${portInfo.port} is not in use`);
             return;
         }
 
-        // Simple log viewing - open a new document
+        const actions = ['View Details', 'Kill Process'];
+        
+        // Add process selection if multiple processes exist
+        if (portInfo.processes && portInfo.processes.length > 1) {
+            actions.unshift('Select Process');
+        }
+        
+        actions.push('Cancel');
+        
+        const action = await vscode.window.showQuickPick(actions, {
+            placeHolder: `Port ${portInfo.port} on ${portInfo.host} (${portInfo.label}) - ${portInfo.processName || 'Unknown Process'}`
+        });
+
+        if (action === 'Select Process') {
+            await this.selectProcess(portInfo);
+        } else if (action === 'View Details') {
+            await this.showProcessDetails(portInfo);
+        } else if (action === 'Kill Process') {
+            await this.killProcess(portInfo);
+        }
+    }
+
+    private async showProcessDetails(portInfo: PortInfo): Promise<void> {
+        const content = this.generateProcessDetailsContent(portInfo);
+        
         const doc = await vscode.workspace.openTextDocument({
-            content: `Port ${portInfo.port} on ${portInfo.host} (${portInfo.label})\n` +
-                    `Process: ${portInfo.processName || 'Unknown'}\n` +
-                    `PID: ${portInfo.pid || 'Unknown'}\n\n` +
-                    `Log monitoring is available in future versions.\n` +
-                    `Click the status bar to refresh or check process details.`,
+            content,
             language: 'plaintext'
         });
         await vscode.window.showTextDocument(doc);
     }
 
+    private async selectProcess(portInfo: PortInfo): Promise<void> {
+        if (!portInfo.processes || portInfo.processes.length === 0) {
+            vscode.window.showInformationMessage('No processes found');
+            return;
+        }
+
+        const processItems = portInfo.processes.map((process) => {
+            const serverIndicator = process.isServer ? '🌐 SERVER' : '🔗 CLIENT';
+            const isSelected = portInfo.pid === process.pid ? ' (Current)' : '';
+            
+            return {
+                label: `${serverIndicator} ${process.name} - PID: ${process.pid}${isSelected}`,
+                description: process.command || 'No command line available',
+                detail: process.isServer ? 'Server process (recommended)' : 'Client process',
+                processInfo: process
+            };
+        });
+
+        const selectedProcess = await vscode.window.showQuickPick(processItems, {
+            placeHolder: 'Select a process to view details or kill',
+            matchOnDescription: true,
+            matchOnDetail: true
+        });
+
+        if (selectedProcess) {
+            // Update the port info with the selected process
+            const updatedPortInfo = { ...portInfo };
+            updatedPortInfo.pid = selectedProcess.processInfo.pid;
+            updatedPortInfo.processName = selectedProcess.processInfo.name;
+            
+            // Show process actions
+            await this.showProcessLog(updatedPortInfo);
+        }
+    }
+
+    private generateProcessDetailsContent(portInfo: PortInfo): string {
+        const timestamp = new Date().toLocaleString();
+        
+        let processSection = `==== Process Information ====
+Process Name: ${portInfo.processName || 'Unknown'}
+PID: ${portInfo.pid || 'Unknown'}
+${portInfo.pid ? `Platform: ${process.platform}` : ''}`;
+
+        // Add all processes if multiple exist
+        if (portInfo.processes && portInfo.processes.length > 1) {
+            processSection += `\n\n==== All Processes on Port ${portInfo.port} ====`;
+            portInfo.processes.forEach((process, index) => {
+                const serverIndicator = process.isServer ? '[SERVER]' : '[CLIENT]';
+                const isSelected = portInfo.pid === process.pid ? ' (Selected)' : '';
+                processSection += `\n${index + 1}. ${serverIndicator} ${process.name} - PID: ${process.pid}${isSelected}`;
+                if (process.command) {
+                    processSection += `\n   Command: ${process.command}`;
+                }
+            });
+        }
+        
+        return `Port Monitor - Process Details
+Generated: ${timestamp}
+
+==== Port Information ====
+Host: ${portInfo.host}
+Port: ${portInfo.port}
+Label: ${portInfo.label}
+Group: ${portInfo.group}
+Status: ${portInfo.isOpen ? 'IN USE' : 'FREE'}
+
+${processSection}
+
+==== Available Actions ====
+• Click the status bar to refresh port status
+• Use the Quick Pick to select specific ports
+• Kill processes using the Kill Process action
+• Select different processes if multiple are available
+
+==== Notes ====
+Process information is only available for localhost connections.
+Server processes are automatically prioritized over client processes.
+Use 'portMonitor.showPortSelector' command to access port-specific actions.
+`;
+    }
+
+    private async killProcess(portInfo: PortInfo): Promise<void> {
+        if (!portInfo.pid) {
+            vscode.window.showErrorMessage('Cannot kill process: PID not available');
+            return;
+        }
+
+        const confirmation = await vscode.window.showWarningMessage(
+            `Are you sure you want to kill the process "${portInfo.processName || 'Unknown'}" (PID: ${portInfo.pid}) on port ${portInfo.port}?`,
+            { modal: true },
+            'Yes, Kill Process',
+            'Cancel'
+        );
+
+        if (confirmation === 'Yes, Kill Process') {
+            try {
+                await this.executeKillProcess(portInfo.pid);
+                vscode.window.showInformationMessage(`Process ${portInfo.pid} killed successfully`);
+                
+                // Refresh port status after killing
+                await this.refreshPortStatus();
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to kill process: ${error}`);
+            }
+        }
+    }
+
+    private async executeKillProcess(pid: number): Promise<void> {
+        const { exec } = require('child_process');
+        const util = require('util');
+        const execAsync = util.promisify(exec);
+
+        const killCommand = process.platform === 'win32' 
+            ? `taskkill /F /PID ${pid}`
+            : `kill -9 ${pid}`;
+
+        try {
+            await execAsync(killCommand);
+        } catch (error) {
+            throw new Error(`Kill command failed: ${error}`);
+        }
+    }
+
     private openSettings(): void {
         vscode.commands.executeCommand('workbench.action.openSettings', 'portMonitor');
+    }
+
+    private async showPortSelector(): Promise<void> {
+        if (!this.currentPortResults || this.currentPortResults.length === 0) {
+            vscode.window.showInformationMessage('No ports are currently being monitored');
+            return;
+        }
+
+        const quickPickItems = this.currentPortResults.map(port => {
+            const status = port.isOpen ? 'IN USE' : 'FREE';
+            const statusIcon = port.isOpen ? '🟢' : '⚪️';
+            
+            let processInfo = '';
+            if (port.isOpen && port.processName) {
+                processInfo = ` (${port.processName}${port.pid ? ` - PID: ${port.pid}` : ''})`;
+                
+                // Show if multiple processes are available
+                if (port.processes && port.processes.length > 1) {
+                    processInfo += ` [${port.processes.length} processes]`;
+                }
+            }
+            
+            return {
+                label: `${statusIcon} ${port.host}:${port.port} - ${port.label}`,
+                description: `${status}${processInfo}`,
+                detail: port.isOpen ? 'Click to view process details' : 'Port is available',
+                portInfo: port
+            };
+        });
+
+        const selected = await vscode.window.showQuickPick(quickPickItems, {
+            placeHolder: 'Select a port to view details',
+            matchOnDescription: true,
+            matchOnDetail: true
+        });
+
+        if (selected) {
+            await this.showProcessLog(selected.portInfo);
+        }
     }
 
     public dispose(): void {

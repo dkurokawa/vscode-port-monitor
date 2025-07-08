@@ -103,6 +103,11 @@
         "command": "portMonitor.openSettings",
         "title": "Open Settings",
         "category": "Port Monitor"
+      },
+      {
+        "command": "portMonitor.showPortSelector",
+        "title": "Show Port Selector",
+        "category": "Port Monitor"
       }
     ]
   },

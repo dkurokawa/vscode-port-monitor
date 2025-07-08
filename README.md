@@ -16,8 +16,8 @@ Features intelligent configuration processing that automatically handles simple 
 - 🌐 **Well-known port support** (http, https, ssh, postgresql, etc.)
 - 📈 **Port range expansion** ("3000-3009" → individual ports)
 - 🎯 **Smart defaults** (Node.js development ports: 3000-3003)
-- 🛑 **Process management** (kill processes using ports)
-- 📺 **Log viewer** (real-time stdout/stderr display)
+- 🛑 **Process management** (kill processes using ports with server/client detection)
+- 📺 **Interactive process viewer** (clickable status bar with process selection)
 - 🎨 **Customizable display** (icons, colors, intervals)
 - 📍 **Status bar positioning** (left or right alignment)
 - 🚨 **Smart error detection** (detailed configuration validation)
@@ -221,10 +221,26 @@ The extension uses a 5-step intelligent processing system:
 ```
 ※ Click status bar display → "Kill Process" to terminate process using the port
 
-### Log Viewer
-※ Click 🟢 icon (running process) → "Show Log" to display real-time output
+### Interactive Process Management
 
+Click the status bar to open the port selector and manage processes:
 
+1. **Port Selection**: Choose from monitored ports with real-time status
+2. **Process Details**: View detailed process information and command lines
+3. **Smart Process Detection**: Automatically prioritizes server processes over client processes (e.g., Node.js server vs. Chrome browser)
+4. **Multiple Process Handling**: When multiple processes use the same port, select the specific one to manage
+5. **Process Termination**: Safely kill processes with confirmation dialogs
+
+**Usage:**
+- Click status bar → Select port → Choose action:
+  - **View Details**: See comprehensive process information
+  - **Select Process**: Choose from multiple processes (if available)
+  - **Kill Process**: Terminate the selected process
+
+**Process Prioritization:**
+- Server processes (Node.js, Python, etc.) are automatically selected over client processes (browsers)
+- Multiple processes are clearly labeled as `[SERVER]` or `[CLIENT]`
+- Process count is shown when multiple processes exist: `(node - PID: 1234) [2 processes]`
 
 ## ⚙️ Configuration Options
 

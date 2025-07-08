@@ -296,7 +296,7 @@ Specific configuration examples tailored to real development scenarios.
 }
 ```
 
-### Case 8: DevOps・CI/CD Environment
+### Case 8: DevOps/CI/CD Environment
 ```json
 {
   "portMonitor.hosts": {

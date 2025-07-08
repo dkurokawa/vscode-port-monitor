@@ -1,5 +1,5 @@
 import * as net from 'net';
-import { PortInfo, GroupConfigs } from './config';
+import { PortInfo, GroupConfigs, ProcessInfo } from './config';
 
 /**
  * Simple port monitoring functionality
@@ -30,10 +30,16 @@ export class PortMonitor {
 
             // For localhost, try to get process information
             if (host === 'localhost' || host === '127.0.0.1') {
-                const processInfo = await this.getProcessInfo(port);
-                if (processInfo) {
-                    portInfo.pid = processInfo.pid;
-                    portInfo.processName = processInfo.name;
+                const processInfos = await this.getProcessInfos(port);
+                if (processInfos && processInfos.length > 0) {
+                    portInfo.processes = processInfos;
+                    
+                    // Select the best process (server first, then fallback to first)
+                    const serverProcess = processInfos.find(p => p.isServer);
+                    const selectedProcess = serverProcess || processInfos[0];
+                    
+                    portInfo.pid = selectedProcess.pid;
+                    portInfo.processName = selectedProcess.name;
                 }
             }
 
@@ -122,48 +128,112 @@ export class PortMonitor {
      * @param port Port number
      * @returns Process information
      */
-    private async getProcessInfo(port: number): Promise<{pid: number, name: string} | null> {
+    private async getProcessInfos(port: number): Promise<ProcessInfo[] | null> {
         try {
             const { exec } = require('child_process');
             const util = require('util');
             const execAsync = util.promisify(exec);
 
-            // Use netstat to find process using the port
-            const command = process.platform === 'win32' 
-                ? `netstat -ano | findstr :${port}`
-                : `lsof -ti:${port}`;
+            const processes: ProcessInfo[] = [];
 
-            const { stdout } = await execAsync(command);
-            
             if (process.platform === 'win32') {
-                // Windows: parse netstat output
+                // Windows: use netstat to find processes
+                const { stdout } = await execAsync(`netstat -ano | findstr :${port}`);
                 const lines = stdout.trim().split('\n');
+                
                 for (const line of lines) {
                     const parts = line.trim().split(/\s+/);
                     if (parts.length >= 5 && parts[1].includes(`:${port}`)) {
                         const pid = parseInt(parts[4]);
                         if (!isNaN(pid)) {
-                            // Get process name
-                            const { stdout: processName } = await execAsync(`tasklist /FI "PID eq ${pid}" /FO CSV /NH`);
-                            const name = processName.split(',')[0].replace(/"/g, '');
-                            return { pid, name };
+                            try {
+                                // Get process name and command
+                                const { stdout: processInfo } = await execAsync(`tasklist /FI "PID eq ${pid}" /FO CSV /NH`);
+                                const name = processInfo.split(',')[0].replace(/"/g, '');
+                                
+                                // Get command line
+                                const { stdout: cmdInfo } = await execAsync(`wmic process where "ProcessId=${pid}" get CommandLine /value`);
+                                const command = cmdInfo.split('CommandLine=')[1]?.split('\n')[0]?.trim();
+                                
+                                const isServer = this.isServerProcess(name, command);
+                                processes.push({ pid, name, command, isServer });
+                            } catch (cmdError) {
+                                // If detailed info fails, still add basic info
+                                processes.push({ pid, name: `PID ${pid}`, isServer: false });
+                            }
                         }
                     }
                 }
             } else {
-                // Unix-like systems: lsof returns PID directly
-                const pid = parseInt(stdout.trim());
-                if (!isNaN(pid)) {
-                    const { stdout: processName } = await execAsync(`ps -p ${pid} -o comm=`);
-                    return { pid, name: processName.trim() };
+                // Unix-like systems: use lsof to find processes
+                const { stdout } = await execAsync(`lsof -ti:${port}`);
+                const pids = stdout.trim().split('\n').filter((p: string) => p.trim());
+                
+                for (const pidStr of pids) {
+                    const pid = parseInt(pidStr.trim());
+                    if (!isNaN(pid)) {
+                        try {
+                            // Get process name
+                            const { stdout: processName } = await execAsync(`ps -p ${pid} -o comm=`);
+                            const name = processName.trim();
+                            
+                            // Get command line
+                            const { stdout: cmdLine } = await execAsync(`ps -p ${pid} -o args=`);
+                            const command = cmdLine.trim();
+                            
+                            const isServer = this.isServerProcess(name, command);
+                            processes.push({ pid, name, command, isServer });
+                        } catch (psError) {
+                            // If detailed info fails, still add basic info
+                            processes.push({ pid, name: `PID ${pid}`, isServer: false });
+                        }
+                    }
                 }
             }
+
+            return processes.length > 0 ? processes : null;
         } catch (error) {
             // Process info is optional, don't throw error
             console.debug(`Could not get process info for port ${port}:`, error);
         }
         
         return null;
+    }
+
+    /**
+     * Determine if a process is likely a server process
+     * @param processName Process name
+     * @param command Command line
+     * @returns True if likely a server process
+     */
+    private isServerProcess(processName: string, command?: string): boolean {
+        if (!processName) return false;
+        
+        const lowerName = processName.toLowerCase();
+        const lowerCommand = command?.toLowerCase() || '';
+        
+        // Server process indicators
+        const serverKeywords = [
+            'server', 'daemon', 'service', 'node', 'python', 'java',
+            'nginx', 'apache', 'httpd', 'gunicorn', 'uvicorn', 'fastapi',
+            'express', 'koa', 'rails', 'django', 'flask', 'tomcat',
+            'php-fpm', 'puma', 'unicorn', 'passenger', 'mongod', 'mysql',
+            'postgres', 'redis', 'elasticsearch', 'docker', 'containerd'
+        ];
+        
+        // Browser process indicators (should be deprioritized)
+        const browserKeywords = [
+            'chrome', 'firefox', 'safari', 'edge', 'browser', 'chromium',
+            'opera', 'vivaldi', 'brave'
+        ];
+        
+        // Check if it's a browser process
+        if (browserKeywords.some(keyword => lowerName.includes(keyword) || lowerCommand.includes(keyword))) {
+            return false;
+        }
+        
+        // Check if it's a server process
+        return serverKeywords.some(keyword => lowerName.includes(keyword) || lowerCommand.includes(keyword));
     }
 
     /**

@@ -44,6 +44,7 @@ npm run publish      # Publish to VS Code marketplace
    - Uses native Node.js net module for TCP connections
    - Event-driven architecture with status updates
    - Handles connection attempts and process management
+   - Intelligent process detection with server/client prioritization
 
 4. **labelResolver.ts** & **patternMatcher.ts**: Pattern-based port labeling
    - Supports glob patterns for flexible matching
@@ -86,6 +87,7 @@ Key test areas:
 - Pattern matching and label resolution
 - Port monitoring functionality
 - Port emoji configuration and display modes
+- Process detection and prioritization
 - Edge cases and error handling
 
 ## VS Code Integration Points
@@ -95,9 +97,11 @@ Key test areas:
    - `portMonitor.portEmojis` - Custom emojis for port labels
    - `portMonitor.emojiMode` - Emoji display mode (prefix/replace/suffix)
 2. **Commands**: 
-   - `portMonitor.showProcessViewer`: Open log viewer
-   - `portMonitor.killProcess`: Kill process on port
-3. **Status Bar**: Real-time port status display
+   - `portMonitor.showPortSelector`: Open port selector with process details
+   - `portMonitor.showLog`: Show process details and actions
+   - `portMonitor.refresh`: Refresh port status
+   - `portMonitor.openSettings`: Open extension settings
+3. **Status Bar**: Real-time port status display with clickable process selection
 4. **Activation**: On VS Code startup (`onStartupFinished`)
 
 ## Development Notes

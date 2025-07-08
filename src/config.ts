@@ -38,6 +38,13 @@ export interface PortMonitorConfig {
     statusBarPosition?: 'left' | 'right';
 }
 
+export interface ProcessInfo {
+    pid: number;
+    name: string;
+    command?: string;
+    isServer?: boolean;
+}
+
 export interface PortInfo {
     host: string;
     port: number;
@@ -47,6 +54,7 @@ export interface PortInfo {
     isOpen: boolean;
     pid?: number;
     processName?: string;
+    processes?: ProcessInfo[];
 }
 
 
