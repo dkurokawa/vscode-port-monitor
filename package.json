@@ -78,7 +78,7 @@
         "portMonitor.portColors": {
           "type": "object",
           "default": {},
-          "description": "Background colors for specific ports. Example: {'3000': '#ffcccc', '8080': 'statusBarItem.errorBackground'}"
+          "description": "Background colors for specific ports, labels, or groups. Example: {'katix': '#40a25f', 'proxy': '#888888', '3000': '#ffcccc', '8080': 'statusBarItem.errorBackground'}"
         },
         "portMonitor.statusBarPosition": {
           "type": "string",

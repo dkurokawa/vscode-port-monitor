@@ -139,14 +139,14 @@ This document provides comprehensive configuration examples for the Port Monitor
 ### Background Colors
 ```json
 {
-  "portMonitor.backgroundColor": "statusBarItem.warningBackground",
-  "portMonitor.portColors": {
-    "3000": "#ff6b6b",
-    "3001": "#4ecdc4",
-    "8080": "statusBarItem.errorBackground"
-  }
+  "portMonitor.backgroundColor": "statusBarItem.warningBackground"
 }
 ```
+
+**Available VS Code Theme Colors:**
+- `statusBarItem.prominentBackground`
+- `statusBarItem.warningBackground`
+- `statusBarItem.errorBackground`
 
 ### Status Bar Position
 ```json
@@ -253,7 +253,7 @@ This document provides comprehensive configuration examples for the Port Monitor
     "localhost": {
       "Gateway": {
         "8080": "api-gateway",
-        "__CONFIG": { "bgcolor": "statusBarItem.errorBackground" }
+        "__CONFIG": { "bgcolor": "statusBarItem.warningBackground" }
       },
       "Services": {
         "3000": "user-service",

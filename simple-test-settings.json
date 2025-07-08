@@ -1,0 +1,49 @@
+{
+  "// === STEP 1: Basic Setup ===": "",
+  "portMonitor.hosts": {
+    "localhost": {
+      "3000": "app",
+      "3001": "api"
+    }
+  },
+  
+  "// === STEP 2: Add Emojis ===": "",
+  "portMonitor.portEmojis": {
+    "app": "🚀",
+    "api": "🔧"
+  },
+  "portMonitor.emojiMode": "replace",
+  
+  "// === STEP 3: Add Colors ===": "",
+  "portMonitor.portColors": {
+    "app": "#61dafb",
+    "3001": "#68d391"
+  },
+  
+  "// === STEP 4: Try Compact Display ===": "",
+  "portMonitor.hosts_compact_example": {
+    "Test": {
+      "3000": "app1",
+      "3001": "app2", 
+      "3002": "app3",
+      "__CONFIG": {
+        "compact": true,
+        "show_title": false
+      }
+    }
+  },
+  
+  "// === STEP 5: Individual Emoji Modes ===": "",
+  "portMonitor.portEmojis_advanced": {
+    "app1": { "replace": "🚀" },
+    "app2": { "prefix": "🔧" },
+    "app3": { "suffix": "⭐" }
+  },
+  
+  "// === Expected Results ===": "",
+  "// Step 1: localhost: ⚪️app:3000 ⚪️api:3001": "",
+  "// Step 2: localhost: 🚀app:3000 🔧api:3001": "",
+  "// Step 3: localhost: 🚀app:3000 🔧api:3001 (with blue/green backgrounds)": "",
+  "// Step 4: 300[🚀app1:0|🔧app2:1|⭐app3:2] (compact display)": "",
+  "// Step 5: 300[🚀app1:0|🔧⚪️app2:1|⚪️app3⭐:2] (individual modes)": ""
+}

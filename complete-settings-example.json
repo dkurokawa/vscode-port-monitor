@@ -1,0 +1,196 @@
+{
+  "// === PORT MONITOR COMPLETE CONFIGURATION EXAMPLE ===": "",
+  "// This file demonstrates all available features and configurations": "",
+  
+  "// === BASIC HOST CONFIGURATION ===": "",
+  "portMonitor.hosts": {
+    
+    "// === FRONTEND DEVELOPMENT GROUP ===": "",
+    "Frontend": {
+      "3000": "react",
+      "3001": "vue", 
+      "3002": "angular",
+      "6006": "storybook",
+      "8080": "webpack-dev",
+      "__CONFIG": {
+        "compact": true,
+        "separator": " | ",
+        "show_title": true,
+        "bgcolor": "statusBarItem.prominentBackground"
+      }
+    },
+    
+    "// === BACKEND SERVICES GROUP ===": "",
+    "Backend": {
+      "4000": "node-api",
+      "4001": "express",
+      "4002": "fastapi",
+      "5000": "flask",
+      "__CONFIG": {
+        "compact": false,
+        "separator": " • ",
+        "show_title": true
+      }
+    },
+    
+    "// === DATABASE GROUP (Compact without title) ===": "",
+    "Databases": {
+      "5432": "postgres",
+      "5433": "postgres-test",
+      "3306": "mysql",
+      "27017": "mongodb",
+      "6379": "redis",
+      "__CONFIG": {
+        "compact": true,
+        "separator": "|",
+        "show_title": false
+      }
+    },
+    
+    "// === MICROSERVICES (Individual display) ===": "",
+    "Microservices": {
+      "8000": "user-service",
+      "8001": "auth-service", 
+      "8002": "order-service",
+      "8003": "payment-service",
+      "8004": "notification-service"
+    },
+    
+    "// === WELL-KNOWN PORTS ===": "",
+    "System": {
+      "http": "nginx",
+      "https": "nginx-ssl",
+      "ssh": "ssh-server"
+    },
+    
+    "// === PORT RANGES ===": "",
+    "Development": ["3010-3020", "9000-9005"],
+    
+    "// === MIXED CONFIGURATION ===": "",
+    "Testing": {
+      "9200": "elasticsearch",
+      "9300": "elasticsearch-transport",
+      "5601": "kibana",
+      "TestRange": ["7000-7005"]
+    }
+  },
+
+  "// === EMOJI CONFIGURATION ===": "",
+  "portMonitor.portEmojis": {
+    "// === SIMPLE FORMAT (uses global emojiMode) ===": "",
+    "react": "⚛️",
+    "vue": "🟢", 
+    "angular": "🔺",
+    "storybook": "📚",
+    "webpack-dev": "📦",
+    
+    "// === INDIVIDUAL CONFIGURATION ===": "",
+    "node-api": { "replace": "🟢" },
+    "express": { "prefix": "🚀" },
+    "fastapi": { "suffix": "⚡" },
+    "flask": { "prefix": "🐍" },
+    
+    "// === DATABASE EMOJIS ===": "",
+    "postgres": "🐘",
+    "postgres-test": { "replace": "🧪" },
+    "mysql": "🐬",
+    "mongodb": "🍃", 
+    "redis": "🔴",
+    
+    "// === MICROSERVICE EMOJIS ===": "",
+    "user-service": { "prefix": "👤" },
+    "auth-service": { "prefix": "🔐" },
+    "order-service": { "prefix": "📦" },
+    "payment-service": { "prefix": "💳" },
+    "notification-service": { "replace": "📢" },
+    
+    "// === SYSTEM EMOJIS ===": "",
+    "nginx": "🌐",
+    "nginx-ssl": { "prefix": "🔒" },
+    "ssh-server": "🔑",
+    
+    "// === SEARCH/ANALYTICS ===": "",
+    "elasticsearch": "🔍",
+    "elasticsearch-transport": { "suffix": "🚀" },
+    "kibana": "📊"
+  },
+
+  "// === GLOBAL EMOJI MODE ===": "",
+  "portMonitor.emojiMode": "replace",
+  
+  "// === STATUS ICONS ===": "",
+  "portMonitor.statusIcons": {
+    "inUse": "🟢",
+    "free": "⚪️"
+  },
+  
+  "// === COLOR CONFIGURATION ===": "",
+  "portMonitor.portColors": {
+    "// === GROUP-LEVEL COLORS (lowest priority) ===": "",
+    "Frontend": "#61dafb",
+    "Backend": "#68d391", 
+    "Databases": "#805ad5",
+    "Microservices": "#f6ad55",
+    "System": "#fc8181",
+    "Testing": "#38b2ac",
+    
+    "// === LABEL-LEVEL COLORS (medium priority) ===": "",
+    "react": "#61dafb",
+    "vue": "#4fc08d",
+    "angular": "#dd0031",
+    "node-api": "#68d391",
+    "postgres": "#336791",
+    "redis": "#dc382d",
+    "elasticsearch": "#005571",
+    
+    "// === PORT-LEVEL COLORS (highest priority) ===": "",
+    "3000": "#ff6b6b",
+    "4000": "#4ecdc4",
+    "5432": "#45b7d1",
+    "8080": "statusBarItem.errorBackground",
+    "9200": "#f9ca24"
+  },
+  
+  "// === GLOBAL BACKGROUND COLOR ===": "",
+  "portMonitor.backgroundColor": "statusBarItem.warningBackground",
+  
+  "// === PORT LABELS (pattern matching) ===": "",
+  "portMonitor.portLabels": {
+    "// === EXACT MATCHES ===": "",
+    "3000": "main-app",
+    "8080": "webpack-dev-server",
+    
+    "// === PATTERN MATCHING ===": "",
+    "300*": "dev-env",
+    "301*": "microservice",
+    "400*": "api-server", 
+    "500*": "python-app",
+    "800*": "proxy-*",
+    "900*": "search-*",
+    "*": "unknown-service"
+  },
+  
+  "// === MONITORING SETTINGS ===": "",
+  "portMonitor.intervalMs": 2000,
+  
+  "// === UI SETTINGS ===": "",
+  "portMonitor.statusBarPosition": "right",
+  
+  "// === EXAMPLE DISPLAYS ===": "",
+  "// Frontend (compact with title): Frontend: 300[⚛️react:0 | 🟢vue:1 | 🔺angular:2]": "",
+  "// Backend (individual): Backend:[🟢node-api:4000 • 🚀🟢express:4001 • fastapi⚡:4002]": "",
+  "// Databases (compact no title): 543[🐘postgres:2|🧪postgres-test:3] 🐬mysql:3306": "",
+  "// Microservices: 👤🟢user-service:8000 🔐🟢auth-service:8001": "",
+  "// System: 🌐nginx:80 🔒🟢nginx-ssl:443": "",
+  
+  "// === COLOR PRIORITY EXAMPLE ===": "",
+  "// If port 3000 is in Frontend group with react label:": "",
+  "// 1. Group color: #61dafb (Frontend)": "",
+  "// 2. Label color: #61dafb (react) - overrides group": "",
+  "// 3. Port color: #ff6b6b (3000) - overrides label (FINAL)": "",
+  
+  "// === BACKGROUND COLOR PRIORITY ===": "",
+  "// 1. Group __CONFIG.bgcolor (highest)": "",
+  "// 2. Global backgroundColor": "",
+  "// 3. Port-specific colors (port > label > group)": ""
+}

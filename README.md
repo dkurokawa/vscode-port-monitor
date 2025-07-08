@@ -50,6 +50,18 @@ This extension supports multiple configuration formats that are automatically pr
 }
 ```
 
+#### Simplest Port Range Format
+```json
+{
+  "portMonitor.hosts": {
+    "Development": ["3000-3003"],
+    "Production": {
+      "8080-8090": ""
+    }
+  }
+}
+```
+
 #### Grouped Configuration Format
 ```json
 {
@@ -134,7 +146,7 @@ The extension uses a 5-step intelligent processing system:
       "3001": "backend",
       "__CONFIG": {
         "compact": true,
-        "bgcolor": "#e6f3ff",
+        "bgcolor": "blue",
         "show_title": true
       }
     },
@@ -143,7 +155,7 @@ The extension uses a 5-step intelligent processing system:
       "6379": "redis",
       "__CONFIG": {
         "compact": false,
-        "bgcolor": "#f0f8e6"
+        "bgcolor": "yellow"
       }
     }
   },
@@ -158,11 +170,6 @@ The extension uses a 5-step intelligent processing system:
     "Development": ["3000-3009", "8080"],
     "Web Services": ["http", "https"],
     "Server Services": ["ssh", "postgresql"]
-  },
-  "portMonitor.portColors": {
-    "3000": "#ffcccc",
-    "80": "#ccffcc",
-    "8080": "statusBarItem.errorBackground"
   }
 }
 ```
@@ -228,8 +235,7 @@ The extension uses a 5-step intelligent processing system:
 | `portMonitor.portEmojis` | Custom emojis for specific port labels | `{}` |
 | `portMonitor.emojiMode` | How to display port emojis (prefix/replace/suffix) | `"replace"` |
 | `portMonitor.statusIcons` | Status icon settings | `{ "inUse": "🟢", "free": "⚪️" }` |
-| `portMonitor.backgroundColor` | Status bar background color | none |
-| `portMonitor.portColors` | Background color per port | none |
+| `portMonitor.backgroundColor` | Status bar background color (VS Code theme colors only) | none |
 | `portMonitor.intervalMs` | Monitoring interval (ms, minimum 1000) | `3000` |
 | `portMonitor.statusBarPosition` | Status bar position ("left" or "right") | `"right"` |
 | `portMonitor.displayOptions.separator` | Port separator character | `"|"` |
@@ -247,6 +253,15 @@ The extension uses a 5-step intelligent processing system:
 - **Port range expansion**: `"3000-3009"` automatically expands to individual ports
 - **Smart grouping**: Simple arrays automatically get grouped for better organization
 - **Flexible input formats**: Arrays, objects, mixed configurations all supported
+
+### Background Color Configuration
+Background colors can be set at two levels:
+1. **Group-level**: Use `__CONFIG.bgcolor` within a group (highest priority)
+2. **Global-level**: Use `portMonitor.backgroundColor` setting
+
+Available background colors:
+- **Simple names**: `"red"`, `"yellow"`, `"blue"`, `"green"`
+- **VS Code theme colors**: `"statusBarItem.errorBackground"`, `"statusBarItem.warningBackground"`, `"statusBarItem.prominentBackground"`, `"statusBarItem.remoteBackground"`
 
 ### portLabels Pattern Examples (Advanced)
 - `"3000"` - Exact match

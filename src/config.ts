@@ -35,7 +35,6 @@ export interface PortMonitorConfig {
     };
     intervalMs: number;
     backgroundColor?: string;
-    portColors?: Record<string, string>;
     statusBarPosition?: 'left' | 'right';
 }
 
@@ -106,7 +105,6 @@ export class ConfigManager {
         // Get other settings, using defaults only if not configured
         const intervalMs = this.config.get<number>('intervalMs');
         const backgroundColor = this.config.get<string>('backgroundColor');
-        const portColors = this.config.get<Record<string, string>>('portColors');
         const statusBarPosition = this.config.get<'left' | 'right'>('statusBarPosition');
         
         return {
@@ -117,7 +115,6 @@ export class ConfigManager {
             statusIcons,
             intervalMs: Math.max(1000, intervalMs !== undefined ? intervalMs : 3000),
             backgroundColor,
-            portColors,
             statusBarPosition
         };
     }
@@ -138,8 +135,13 @@ export class ConfigManager {
         // Validate raw hosts configuration (before processing)
         if (rawConfig.hosts && typeof rawConfig.hosts === 'object') {
             try {
-                // Check for common configuration mistakes
-                const configErrors = ConfigManager.validateHostsStructure(rawConfig.hosts);
+                // Apply early transformation steps before validation
+                let preprocessed = rawConfig.hosts;
+                preprocessed = ConfigManager.step1_ReplaceWellKnownPorts(preprocessed);
+                preprocessed = ConfigManager.step2_ExpandPortRanges(preprocessed);
+                
+                // Check for common configuration mistakes on preprocessed config
+                const configErrors = ConfigManager.validateHostsStructure(preprocessed);
                 errors.push(...configErrors);
                 
                 // Try to process the configuration to validate it
@@ -173,6 +175,11 @@ export class ConfigManager {
         for (const [hostKey, hostValue] of Object.entries(hosts)) {
             if (!hostValue || typeof hostValue !== 'object') {
                 errors.push(`Host "${hostKey}" must have port configuration`);
+                continue;
+            }
+
+            // Skip validation for array configurations - they are valid
+            if (Array.isArray(hostValue)) {
                 continue;
             }
 
@@ -232,13 +239,8 @@ Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
                 errors.push(`Host "${hostKey}": Host name looks like a port number. Use "localhost" or proper hostname`);
             }
 
-            // Check for common port range mistakes
-            for (const [key, value] of entries) {
-                if (typeof key === 'string' && key.includes('-') && typeof value === 'string') {
-                    // Likely port range in wrong place
-                    errors.push(`Host "${hostKey}": Port range "${key}" detected. Use array format: {"group": ["3000-3005"]} or {"3000-3005": "label"}`);
-                }
-            }
+            // Note: Port ranges like "3008-3030": "label" are valid and will be expanded in step2
+            // The previous validation here was too restrictive
         }
 
         return errors;

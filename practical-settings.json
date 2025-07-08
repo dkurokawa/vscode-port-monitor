@@ -1,0 +1,68 @@
+{
+  "portMonitor.hosts": {
+    "Web Dev": {
+      "3000": "react",
+      "3001": "vue", 
+      "3002": "next",
+      "8080": "webpack",
+      "__CONFIG": {
+        "compact": true,
+        "show_title": false
+      }
+    },
+    "API": {
+      "4000": "node-api",
+      "5000": "python-api",
+      "8000": "django"
+    },
+    "Database": {
+      "5432": "postgres",
+      "3306": "mysql",
+      "6379": "redis",
+      "__CONFIG": {
+        "compact": true,
+        "separator": "|"
+      }
+    },
+    "Services": {
+      "9200": "elastic",
+      "5601": "kibana",
+      "6000": "grafana"
+    }
+  },
+  
+  "portMonitor.portEmojis": {
+    "react": "⚛️",
+    "vue": "🟢",
+    "next": "▲",
+    "webpack": "📦",
+    "node-api": { "replace": "🟢" },
+    "python-api": { "prefix": "🐍" },
+    "django": "🎸",
+    "postgres": "🐘",
+    "mysql": "🐬", 
+    "redis": "🔴",
+    "elastic": "🔍",
+    "kibana": "📊",
+    "grafana": "📈"
+  },
+  
+  "portMonitor.emojiMode": "replace",
+  
+  "portMonitor.portColors": {
+    "Web Dev": "#61dafb",
+    "API": "#68d391",
+    "Database": "#805ad5",
+    "Services": "#f6ad55",
+    "3000": "#ff6b6b",
+    "5432": "#336791"
+  },
+  
+  "portMonitor.statusIcons": {
+    "inUse": "🟢",
+    "free": "⚪️"
+  },
+  
+  "portMonitor.intervalMs": 3000,
+  "portMonitor.statusBarPosition": "right"
+}

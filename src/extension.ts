@@ -1,6 +1,18 @@
 import * as vscode from 'vscode';
-import { ConfigManager, PortInfo, PortMonitorConfig, PortEmojiConfig } from './config';
+import { ConfigManager, PortInfo, PortMonitorConfig, PortEmojiConfig, GroupConfigs } from './config';
 import { PortMonitor } from './monitor';
+
+interface PortObject {
+    port: number;
+    label: string;
+    group: string;
+    host: string;
+    statusIcon: 'free' | 'inUse';
+    emoji?: string | PortEmojiConfig;
+    emojiMode?: 'prefix' | 'replace' | 'suffix';
+    groupConfigs?: GroupConfigs;
+    color?: string;
+}
 
 export class PortMonitorExtension {
     private statusBarItem: vscode.StatusBarItem;
@@ -8,6 +20,13 @@ export class PortMonitorExtension {
     private configManager: ConfigManager;
     private currentMonitorId?: string;
     private disposables: vscode.Disposable[] = [];
+    private displayTemplate: string = '';
+    private portObjects: Record<string, PortObject> = {};
+    private displayConfig: {
+        statusIcons: { inUse: string; free: string };
+        backgroundColor?: string;
+        globalEmojiMode: 'prefix' | 'replace' | 'suffix';
+    } | null = null;
 
     constructor(private _context: vscode.ExtensionContext) {
         try {
@@ -73,8 +92,7 @@ export class PortMonitorExtension {
             intervalMs: rawConfig.get('intervalMs'),
             portLabels: rawConfig.get('portLabels'),
             statusIcons: rawConfig.get('statusIcons'),
-            backgroundColor: rawConfig.get('backgroundColor'),
-            portColors: rawConfig.get('portColors')
+            backgroundColor: rawConfig.get('backgroundColor')
         });
         
         if (validationErrors.length > 0) {
@@ -126,154 +144,134 @@ export class PortMonitorExtension {
             return;
         }
 
+        // Build display template and port objects
+        this.buildDisplayTemplate(config, hostConfigs);
+
         // Start monitoring
         this.currentMonitorId = await this.monitor.startMonitoring(
             hostConfigs,
             config.intervalMs,
-            (results) => this.onPortStatusChanged(results, config)
+            (results) => this.onPortStatusChanged(results)
         );
     }
 
-    private onPortStatusChanged(results: PortInfo[], config: PortMonitorConfig): void {
+    private buildDisplayTemplate(config: PortMonitorConfig, hostConfigs: Array<{ host: string; port: number; label: string; group: string; groupConfigs?: GroupConfigs }>): void {
+        // Reset port objects
+        this.portObjects = {};
         
-        // Group by host and then by group for better organization
-        const hostGroups = results.reduce((acc, port) => {
-            if (!acc[port.host]) {
-                acc[port.host] = {};
-            }
-            if (!acc[port.host][port.group]) {
-                acc[port.host][port.group] = [];
-            }
-            acc[port.host][port.group].push(port);
-            return acc;
-        }, {} as Record<string, Record<string, PortInfo[]>>);
+        // Store display configuration
+        this.displayConfig = {
+            statusIcons: config.statusIcons,
+            backgroundColor: config.backgroundColor,
+            globalEmojiMode: config.emojiMode || 'replace'
+        };
 
-        // Generate display text using group information from config
+        // Step 1: Create port objects from hosts configuration
+        this.createPortObjectsFromHosts(hostConfigs);
+        
+        // Step 2: Apply port labels
+        this.applyPortLabels(config.portLabels);
+        
+        // Step 3: Apply port emojis
+        this.applyPortEmojis(config.portEmojis, config.emojiMode);
+        
+        // Step 4: Build display template
+        this.buildTemplate(hostConfigs);
+    }
+
+    private createPortObjectsFromHosts(hostConfigs: Array<{ host: string; port: number; label: string; group: string; groupConfigs?: GroupConfigs }>): void {
+        for (const config of hostConfigs) {
+            const key = config.port.toString();
+            this.portObjects[key] = {
+                port: config.port,
+                label: config.label,
+                group: config.group,
+                host: config.host,
+                statusIcon: 'free',
+                groupConfigs: config.groupConfigs
+            };
+        }
+    }
+
+    private applyPortLabels(portLabels?: Record<string, string>): void {
+        if (!portLabels) return;
+        
+        for (const [port, label] of Object.entries(portLabels)) {
+            if (this.portObjects[port]) {
+                this.portObjects[port].label = label;
+            }
+        }
+    }
+
+    private applyPortEmojis(portEmojis?: Record<string, string | PortEmojiConfig>, globalMode?: 'prefix' | 'replace' | 'suffix'): void {
+        if (!portEmojis) return;
+        
+        for (const [port, portObj] of Object.entries(this.portObjects)) {
+            const emoji = portEmojis[portObj.label];
+            if (emoji) {
+                portObj.emoji = emoji;
+                if (typeof emoji === 'string') {
+                    portObj.emojiMode = globalMode;
+                }
+            }
+        }
+    }
+
+
+    private buildTemplate(hostConfigs: Array<{ host: string; port: number; label: string; group: string; groupConfigs?: GroupConfigs }>): void {
+        // Group ports by host and group
+        const groupedPorts: Record<string, Record<string, typeof hostConfigs>> = {};
+        
+        for (const config of hostConfigs) {
+            if (!groupedPorts[config.host]) {
+                groupedPorts[config.host] = {};
+            }
+            if (!groupedPorts[config.host][config.group]) {
+                groupedPorts[config.host][config.group] = [];
+            }
+            groupedPorts[config.host][config.group].push(config);
+        }
+        
         const hostDisplays: string[] = [];
-
-        for (const [host, groups] of Object.entries(hostGroups)) {
+        
+        for (const [host, groups] of Object.entries(groupedPorts)) {
             const groupDisplays: string[] = [];
             
             for (const [groupName, ports] of Object.entries(groups)) {
-                // Get group configs from first port (all ports in a group share configs)
                 const groupConfigs = ports[0]?.groupConfigs;
                 const isCompact = groupConfigs?.compact === true;
                 const separator = groupConfigs?.separator || '|';
-                const showTitle = groupConfigs?.show_title !== false; // default true
+                const showTitle = groupConfigs?.show_title !== false;
                 
+                let groupDisplay: string;
                 
                 if (isCompact) {
-                    // Compact mode: find common prefix and create range display
-                    const compactDisplay = this.createCompactDisplay(ports, config.statusIcons, separator, config.portEmojis, config.emojiMode);
-                    
-                    if (groupName.startsWith('__NOTITLE') || groupName === '' || !showTitle) {
-                        groupDisplays.push(compactDisplay);
-                    } else {
-                        groupDisplays.push(`${groupName}: ${compactDisplay}`);
-                    }
+                    groupDisplay = this.createCompactTemplate(ports, separator);
                 } else {
-                    // Normal mode: individual port display
-                    const portDisplays = ports.map(port => this.formatPortDisplay(port, config.statusIcons, config.portEmojis, config.emojiMode));
-                    
-                    if (groupName.startsWith('__NOTITLE') || groupName === '' || !showTitle) {
-                        groupDisplays.push(portDisplays.join(' '));
-                    } else {
-                        groupDisplays.push(`${groupName}:[${portDisplays.join(separator)}]`);
-                    }
+                    const portTemplates = ports.map(p => `__PORT_${p.port}`);
+                    groupDisplay = portTemplates.join(' ');
                 }
+                
+                if (showTitle && groupName && !groupName.startsWith('__NOTITLE')) {
+                    groupDisplay = `${groupName}: ${groupDisplay}`;
+                }
+                
+                groupDisplays.push(groupDisplay);
             }
             
-            // Since we're using flat structure, all hosts are localhost - don't show host name
             hostDisplays.push(groupDisplays.join(' '));
         }
-
-        const displayText = hostDisplays.join(' ');
-        console.log('[PortMonitor] StatusBar displayText:', displayText);
-        this.statusBarItem.text = displayText;
-        this.statusBarItem.tooltip = this.generateTooltip(results);
-
-        // Background color setting - priority: group bgcolor > global backgroundColor > portColors
-        let backgroundColor: string | undefined;
         
-        // Check for group-level bgcolor (highest priority)
-        for (const port of results) {
-            if (port.groupConfigs?.bgcolor) {
-                backgroundColor = port.groupConfigs.bgcolor;
-                break;
-            }
-        }
-        
-        // Fall back to global backgroundColor
-        if (!backgroundColor && config.backgroundColor) {
-            backgroundColor = config.backgroundColor;
-        }
-        
-        // Fall back to port-specific colors
-        if (!backgroundColor && config.portColors) {
-            // Color of first inUse port, otherwise free port color, otherwise undefined
-            for (const port of results) {
-                if (port.isOpen && config.portColors[port.port.toString()]) {
-                    backgroundColor = config.portColors[port.port.toString()];
-                    break;
-                }
-            }
-            if (!backgroundColor) {
-                for (const port of results) {
-                    if (!port.isOpen && config.portColors[port.port.toString()]) {
-                        backgroundColor = config.portColors[port.port.toString()];
-                        break;
-                    }
-                }
-            }
-        }
-        
-        this.statusBarItem.backgroundColor = backgroundColor ? new vscode.ThemeColor(backgroundColor) : undefined;
+        this.displayTemplate = hostDisplays.join(' ');
     }
 
-    private formatPortDisplay(port: PortInfo, statusIcons: { inUse: string; free: string }, portEmojis?: Record<string, string | PortEmojiConfig>, emojiMode: 'prefix' | 'replace' | 'suffix' = 'replace'): string {
-        const emojiConfig = portEmojis?.[port.label];
-        const statusIcon = port.isOpen ? statusIcons.inUse : statusIcons.free;
-        
-        if (emojiConfig) {
-            // Handle both string and object formats
-            if (typeof emojiConfig === 'string') {
-                // Simple format: "car": "🚗" - use global emojiMode with defaulting to replace
-                const emoji = emojiConfig;
-                switch (emojiMode) {
-                    case 'prefix':
-                        return `${emoji}${statusIcon}${port.label}:${port.port}`;
-                    case 'replace':
-                        // Use emoji for inUse ports, keep free icon for free ports
-                        const displayIcon = port.isOpen ? emoji : statusIcons.free;
-                        return `${displayIcon}${port.label}:${port.port}`;
-                    case 'suffix':
-                        return `${statusIcon}${port.label}${emoji}:${port.port}`;
-                }
-            } else {
-                // Detailed format: "user": {"prefix": "🙂"} - individual mode setting
-                if (emojiConfig.prefix) {
-                    return `${emojiConfig.prefix}${statusIcon}${port.label}:${port.port}`;
-                } else if (emojiConfig.replace) {
-                    const displayIcon = port.isOpen ? emojiConfig.replace : statusIcons.free;
-                    return `${displayIcon}${port.label}:${port.port}`;
-                } else if (emojiConfig.suffix) {
-                    return `${statusIcon}${port.label}${emojiConfig.suffix}:${port.port}`;
-                }
-            }
-        }
-        
-        // Fallback to normal display
-        return `${statusIcon}${port.label}:${port.port}`;
-    }
-
-    private createCompactDisplay(ports: PortInfo[], statusIcons: { inUse: string; free: string }, separator: string, portEmojis?: Record<string, string | PortEmojiConfig>, emojiMode: 'prefix' | 'replace' | 'suffix' = 'replace'): string {
+    private createCompactTemplate(ports: Array<{ port: number }>, separator: string): string {
         if (ports.length === 0) return '';
         
-        // Find common prefix for port numbers
+        // Find common prefix
         const portNumbers = ports.map(p => p.port).sort((a, b) => a - b);
         let commonPrefix = '';
         
-        // Find the longest common prefix among port numbers
         const minPort = portNumbers[0].toString();
         const maxPort = portNumbers[portNumbers.length - 1].toString();
         
@@ -285,23 +283,177 @@ export class PortMonitorExtension {
             }
         }
         
-        // If common prefix is meaningful (at least 2 digits), use compact format
+        const portTemplates = ports.map(p => `__PORT_${p.port}`);
+        
         if (commonPrefix.length >= 2) {
-            const portDisplays = ports.map(port => {
-                const suffix = port.port.toString().substring(commonPrefix.length);
-                const tempPort = { ...port, port: parseInt(suffix) || port.port };
-                const display = this.formatPortDisplay(tempPort, statusIcons, portEmojis, emojiMode);
-                return display.replace(`:${tempPort.port}`, `:${suffix}`);
-            });
-            
-            return `${commonPrefix}[${portDisplays.join(separator)}]`;
+            // Compact format with common prefix
+            return `${commonPrefix}[${portTemplates.join(separator)}]`;
         } else {
-            // Fall back to normal display if no meaningful prefix
-            const portDisplays = ports.map(port => this.formatPortDisplay(port, statusIcons, portEmojis, emojiMode));
-            
-            return `[${portDisplays.join(separator)}]`;
+            // Regular bracket format
+            return `[${portTemplates.join(separator)}]`;
         }
     }
+
+    private onPortStatusChanged(results: PortInfo[]): void {
+        if (!this.displayConfig || !this.displayTemplate) {
+            console.error('[PortMonitor] Display configuration not initialized');
+            return;
+        }
+
+        // Update port status in portObjects
+        for (const result of results) {
+            const portKey = result.port.toString();
+            if (this.portObjects[portKey]) {
+                this.portObjects[portKey].statusIcon = result.isOpen ? 'inUse' : 'free';
+            }
+        }
+
+        // Replace template placeholders with actual port displays
+        let displayText = this.displayTemplate;
+        
+        // Handle compact display replacements first
+        displayText = this.processCompactDisplays(displayText);
+        
+        // Replace remaining individual port placeholders
+        for (const [portKey, portObj] of Object.entries(this.portObjects)) {
+            const placeholder = `__PORT_${portObj.port}`;
+            if (displayText.includes(placeholder)) {
+                const portDisplay = this.renderPortDisplay(portObj);
+                displayText = displayText.replace(placeholder, portDisplay);
+            }
+        }
+        
+        console.log('[PortMonitor] StatusBar displayText:', displayText);
+        this.statusBarItem.text = displayText;
+        this.statusBarItem.tooltip = this.generateTooltip(results);
+
+        // Apply background color
+        this.applyBackgroundColor(results);
+    }
+
+    private renderPortDisplay(portObj: PortObject, suffixForCompact?: string): string {
+        if (!this.displayConfig) return '';
+        
+        const statusIcon = portObj.statusIcon === 'inUse' 
+            ? this.displayConfig.statusIcons.inUse 
+            : this.displayConfig.statusIcons.free;
+
+        // Use suffix for compact display, otherwise full port number
+        const displayPort = suffixForCompact || portObj.port.toString();
+
+        if (portObj.emoji) {
+            const emojiMode = portObj.emojiMode || this.displayConfig.globalEmojiMode;
+            
+            if (typeof portObj.emoji === 'string') {
+                // Simple string emoji
+                switch (emojiMode) {
+                    case 'prefix':
+                        return `${portObj.emoji}${statusIcon}${portObj.label}:${displayPort}`;
+                    case 'replace':
+                        const displayIcon = portObj.statusIcon === 'inUse' ? portObj.emoji : this.displayConfig.statusIcons.free;
+                        return `${displayIcon}${portObj.label}:${displayPort}`;
+                    case 'suffix':
+                        return `${statusIcon}${portObj.label}${portObj.emoji}:${displayPort}`;
+                }
+            } else {
+                // Detailed emoji configuration
+                if (portObj.emoji.prefix) {
+                    return `${portObj.emoji.prefix}${statusIcon}${portObj.label}:${displayPort}`;
+                } else if (portObj.emoji.replace) {
+                    const displayIcon = portObj.statusIcon === 'inUse' ? portObj.emoji.replace : this.displayConfig.statusIcons.free;
+                    return `${displayIcon}${portObj.label}:${displayPort}`;
+                } else if (portObj.emoji.suffix) {
+                    return `${statusIcon}${portObj.label}${portObj.emoji.suffix}:${displayPort}`;
+                }
+            }
+        }
+
+        // Default display without emoji
+        return `${statusIcon}${portObj.label}:${displayPort}`;
+    }
+
+    private applyBackgroundColor(results: PortInfo[]): void {
+        let backgroundColor: string | undefined;
+
+        // 1. Check for group-level bgcolor (highest priority)
+        for (const port of results) {
+            if (port.groupConfigs?.bgcolor) {
+                backgroundColor = port.groupConfigs.bgcolor;
+                break;
+            }
+        }
+
+        // 2. Fall back to global backgroundColor
+        if (!backgroundColor && this.displayConfig?.backgroundColor) {
+            backgroundColor = this.displayConfig.backgroundColor;
+        }
+
+        // 3. Convert simple color names to theme colors
+        if (backgroundColor) {
+            backgroundColor = this.convertColorNameToThemeColor(backgroundColor);
+        }
+
+        this.statusBarItem.backgroundColor = backgroundColor ? new vscode.ThemeColor(backgroundColor) : undefined;
+    }
+
+    private convertColorNameToThemeColor(color: string): string {
+        const colorMap: Record<string, string> = {
+            'red': 'statusBarItem.errorBackground',
+            'yellow': 'statusBarItem.warningBackground', 
+            'blue': 'statusBarItem.prominentBackground',
+            'green': 'statusBarItem.remoteBackground'
+        };
+        
+        return colorMap[color.toLowerCase()] || color;
+    }
+
+    private processCompactDisplays(displayText: string): string {
+        // Find compact display patterns: commonPrefix[__PORT_xxx separator __PORT_yyy]
+        const compactPattern = /(\d{2,})\[([^\]]+)\]/g;
+        
+        return displayText.replace(compactPattern, (match, commonPrefix, content) => {
+            // Detect separator by finding the pattern between port placeholders
+            const portMatches = content.match(/__PORT_\d+/g);
+            let separator = '|'; // default
+            
+            if (portMatches && portMatches.length > 1) {
+                // Extract separator from between first two ports
+                const firstPortEnd = content.indexOf(portMatches[0]) + portMatches[0].length;
+                const secondPortStart = content.indexOf(portMatches[1]);
+                if (secondPortStart > firstPortEnd) {
+                    separator = content.substring(firstPortEnd, secondPortStart);
+                }
+            }
+            
+            // Split by the detected separator
+            const parts = content.split(separator);
+            const portDisplays: string[] = [];
+            
+            for (const part of parts) {
+                const trimmed = part.trim();
+                const portMatch = trimmed.match(/__PORT_(\d+)/);
+                
+                if (portMatch) {
+                    const portNumber = parseInt(portMatch[1]);
+                    const portObj = this.portObjects[portNumber.toString()];
+                    
+                    if (portObj) {
+                        // Calculate suffix for compact display
+                        const suffix = portNumber.toString().substring(commonPrefix.length);
+                        const portDisplay = this.renderPortDisplay(portObj, suffix);
+                        portDisplays.push(portDisplay);
+                    }
+                } else {
+                    // Non-port content, keep as is
+                    portDisplays.push(trimmed);
+                }
+            }
+            
+            return `${commonPrefix}[${portDisplays.join(separator)}]`;
+        });
+    }
+
+    // Legacy methods removed - replaced with new template-based system
 
     private generateTooltip(results: PortInfo[]): string {
         const lines = results.map(port => {
