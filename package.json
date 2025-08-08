@@ -2,7 +2,7 @@
   "name": "vscode-port-monitor",
   "displayName": "Port Monitor",
   "description": "Monitor multiple hosts and ports with real-time status display in VS Code status bar",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "publisher": "dkurokawa",
   "license": "MIT",
   "repository": {
@@ -61,7 +61,11 @@
         },
         "portMonitor.emojiMode": {
           "type": "string",
-          "enum": ["prefix", "replace", "suffix"],
+          "enum": [
+            "prefix",
+            "replace",
+            "suffix"
+          ],
           "default": "replace",
           "description": "How to display port emojis: 'prefix' (🚗🟢car:3000), 'replace' (🚗car:3000), 'suffix' (🟢car🚗:3000)"
         },
@@ -73,7 +77,10 @@
         },
         "portMonitor.statusBarPosition": {
           "type": "string",
-          "enum": ["left", "right"],
+          "enum": [
+            "left",
+            "right"
+          ],
           "default": "right",
           "description": "Status bar position (left or right)"
         }
