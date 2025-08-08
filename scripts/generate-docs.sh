@@ -1,0 +1,555 @@
+#!/bin/bash
+
+# Generate instruction.html for vscode-port-monitor
+
+# Get version from package.json
+VERSION=$(grep '"version":' package.json | cut -d'"' -f4 | head -1)
+BUILD_DATE=$(date -u +"%Y-%m-%d")
+
+# Create .html directory if it doesn't exist
+mkdir -p .html
+
+cat > .html/instruction.html << 'EOF'
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VSCode Port Monitor - Real-time Port Status Display Extension</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --text-color: #1f2937;
+            --bg-color: #f9fafb;
+            --code-bg: #f3f4f6;
+            --border-color: #e5e7eb;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 40px 0;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            margin: -20px -20px 40px -20px;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .tagline {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .version {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .summary {
+            background: #f0f4f8;
+            border-left: 4px solid var(--primary-color);
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .summary h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+        
+        .summary p {
+            margin-bottom: 10px;
+        }
+        
+        .summary .platforms {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        .summary .platform-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            border: 1px solid var(--border-color);
+        }
+        
+        h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        h3 {
+            color: var(--secondary-color);
+            margin: 20px 0 10px 0;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .feature {
+            background: var(--bg-color);
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .feature h4 {
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+        
+        .status-example {
+            display: inline-block;
+            background: #1f2937;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        
+        details {
+            margin: 20px 0;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        summary {
+            padding: 15px 20px;
+            background: var(--code-bg);
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--secondary-color);
+            user-select: none;
+            transition: background-color 0.2s;
+        }
+        
+        summary:hover {
+            background: #e5e7eb;
+        }
+        
+        details[open] summary {
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .details-content {
+            padding: 20px;
+        }
+        
+        code {
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+        }
+        
+        pre {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+        
+        .install-options {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .install-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        
+        .install-btn:hover {
+            background: var(--secondary-color);
+        }
+        
+        .example-config {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .emoji-list {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+        
+        .emoji-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .warning {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .info {
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            header {
+                margin: -10px -10px 30px -10px;
+                padding: 30px 10px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🔍 VSCode Port Monitor</h1>
+            <p class="tagline">Real-time Port Status Display in VS Code Status Bar</p>
+            <span class="version">Version VERSION_PLACEHOLDER</span>
+        </div>
+    </header>
+    
+    <div class="container">
+        <section class="section">
+            <h2>概要</h2>
+            
+            <div class="summary">
+                <h3>🎯 開発環境と拡張機能の概要</h3>
+                <p><strong>VSCode Port Monitor</strong>は、複数のポートの状態をリアルタイムで監視し、VS Codeのステータスバーに表示する拡張機能です。</p>
+                <p>開発中のサービスやデータベースの稼働状態を一目で確認でき、プロセス管理機能も備えています。</p>
+                <div class="platforms">
+                    <span class="platform-badge">💻 VS Code 1.60.0+</span>
+                    <span class="platform-badge">🟢 Node.js 16.0+</span>
+                    <span class="platform-badge">🌐 Multi-host Support</span>
+                    <span class="platform-badge">🎨 Customizable Display</span>
+                </div>
+            </div>
+            
+            <p>Port Monitorは、開発者の生産性を向上させるVS Code拡張機能です。
+            複数のサービスのポート状態を常に監視し、ステータスバーに分かりやすく表示します。</p>
+            
+            <div class="status-example">
+                localhost: 300[🟢user:0|⚪️car:1|⚪️2|⚪️3|🟢4]
+            </div>
+            
+            <div class="features">
+                <div class="feature">
+                    <h4>🔍 マルチポート監視</h4>
+                    <p>複数のホストとポートを同時に監視し、リアルタイムで状態を更新</p>
+                </div>
+                <div class="feature">
+                    <h4>🏷️ インテリジェント設定</h4>
+                    <p>ポート範囲の自動展開、Well-knownポート名のサポート</p>
+                </div>
+                <div class="feature">
+                    <h4>🛑 プロセス管理</h4>
+                    <p>ポートを使用中のプロセスを特定し、安全に終了可能</p>
+                </div>
+                <div class="feature">
+                    <h4>🎨 カスタマイズ可能</h4>
+                    <p>アイコン、絵文字、表示形式を自由にカスタマイズ</p>
+                </div>
+            </div>
+        </section>
+        
+        <section class="section">
+            <details>
+                <summary>📖 詳細機能</summary>
+                <div class="details-content">
+                    <h3>主な機能</h3>
+                    <ul>
+                        <li><strong>5段階の設定処理:</strong> Well-knownポート置換、範囲展開、配列変換など自動処理</li>
+                        <li><strong>コンパクト表示:</strong> <code>__CONFIG.compact: true</code>で共通プレフィックスをまとめて表示</li>
+                        <li><strong>インタラクティブUI:</strong> ステータスバークリックでポートセレクターを表示</li>
+                        <li><strong>スマートプロセス検出:</strong> サーバープロセスを優先的に識別（Node.js、Python等）</li>
+                        <li><strong>柔軟な設定形式:</strong> 配列、オブジェクト、範囲指定など多様な形式をサポート</li>
+                        <li><strong>エラー検出:</strong> 設定ミスを検出し、具体的な修正方法を提案</li>
+                    </ul>
+                    
+                    <h3>設定例</h3>
+                    <pre><code>{
+  "portMonitor.hosts": {
+    "Frontend": {
+      "3000": "app",
+      "3001": "api",
+      "3002": "admin",
+      "__CONFIG": {
+        "compact": true,
+        "separator": "|"
+      }
+    },
+    "Database": {
+      "5432": "postgres",
+      "6379": "redis"
+    }
+  },
+  "portMonitor.statusIcons": {
+    "inUse": "🟢",
+    "free": "⚪️"
+  }
+}</code></pre>
+                    
+                    <h3>コンパクト表示</h3>
+                    <p>共通のプレフィックスを持つポートをコンパクトに表示:</p>
+                    <ul>
+                        <li>通常: <code>🟢3000 🟢3001 🟢3002</code></li>
+                        <li>コンパクト: <code>300[🟢0|🟢1|🟢2]</code></li>
+                    </ul>
+                    
+                    <h3>ポート範囲の展開</h3>
+                    <pre><code>{
+  "portMonitor.hosts": {
+    "Development": {
+      "3000-3009": "",  // 10個のポートに自動展開
+      "__CONFIG": {
+        "compact": true
+      }
+    }
+  }
+}</code></pre>
+                </div>
+            </details>
+        </section>
+        
+        <section class="section">
+            <h2>インストール方法</h2>
+            
+            <div class="example-config">
+                <h4>🚀 VS Code Marketplace からインストール</h4>
+                <ol>
+                    <li>VS Code の拡張機能パネルを開く（Cmd/Ctrl + Shift + X）</li>
+                    <li>"Port Monitor" を検索</li>
+                    <li>インストールボタンをクリック</li>
+                </ol>
+            </div>
+            
+            <div class="example-config">
+                <h4>📦 VSIX ファイルからインストール</h4>
+                <pre><code># コマンドラインから
+code --install-extension vscode-port-monitor-VERSION_PLACEHOLDER.vsix
+
+# または VS Code UI から
+1. 拡張機能パネルを開く
+2. ... メニューから「VSIXからインストール」を選択
+3. VSIXファイルを選択</code></pre>
+            </div>
+        </section>
+        
+        <section class="section">
+            <h2>クイックスタート</h2>
+            
+            <h3>1. 基本設定</h3>
+            <pre><code>{
+  "portMonitor.hosts": {
+    "localhost": [3000, 3001, 3002]
+  }
+}</code></pre>
+            
+            <h3>2. ラベル付き設定</h3>
+            <pre><code>{
+  "portMonitor.hosts": {
+    "Services": {
+      "3000": "frontend",
+      "3001": "backend",
+      "5432": "database"
+    }
+  }
+}</code></pre>
+            
+            <h3>3. カスタム絵文字</h3>
+            <pre><code>{
+  "portMonitor.portEmojis": {
+    "frontend": "⚛️",
+    "backend": "🚀",
+    "database": "🗄️"
+  },
+  "portMonitor.emojiMode": "replace"
+}</code></pre>
+            
+            <div class="info">
+                <strong>💡 ヒント:</strong> ステータスバーの表示をクリックすると、ポートの詳細情報やプロセス管理オプションが表示されます。
+            </div>
+        </section>
+        
+        <section class="section">
+            <h2>プロセス管理</h2>
+            
+            <p>ステータスバーをクリックして、以下の操作が可能です：</p>
+            
+            <div class="features">
+                <div class="feature">
+                    <h4>ポート選択</h4>
+                    <p>監視中のポートから選択し、詳細情報を表示</p>
+                </div>
+                <div class="feature">
+                    <h4>プロセス詳細</h4>
+                    <p>PID、プロセス名、コマンドラインを確認</p>
+                </div>
+                <div class="feature">
+                    <h4>プロセス終了</h4>
+                    <p>確認ダイアログ付きで安全にプロセスを終了</p>
+                </div>
+            </div>
+            
+            <div class="warning">
+                <strong>⚠️ 注意:</strong> プロセスの終了は慎重に行ってください。重要なサービスを誤って終了させないよう注意が必要です。
+            </div>
+        </section>
+        
+        <section class="section">
+            <h2>設定オプション</h2>
+            
+            <h3>利用可能な設定</h3>
+            <ul>
+                <li><code>portMonitor.hosts</code> - 監視対象のホストとポート</li>
+                <li><code>portMonitor.portLabels</code> - ポートのラベル（パターンマッチ対応）</li>
+                <li><code>portMonitor.portEmojis</code> - カスタム絵文字設定</li>
+                <li><code>portMonitor.emojiMode</code> - 絵文字表示モード（prefix/replace/suffix）</li>
+                <li><code>portMonitor.statusIcons</code> - ステータスアイコン</li>
+                <li><code>portMonitor.intervalMs</code> - 監視間隔（ミリ秒）</li>
+                <li><code>portMonitor.statusBarPosition</code> - ステータスバー位置（left/right）</li>
+            </ul>
+            
+            <h3>Well-known ポート</h3>
+            <div class="emoji-list">
+                <div class="emoji-item"><code>"http"</code> → 80</div>
+                <div class="emoji-item"><code>"https"</code> → 443</div>
+                <div class="emoji-item"><code>"ssh"</code> → 22</div>
+                <div class="emoji-item"><code>"postgresql"</code> → 5432</div>
+                <div class="emoji-item"><code>"mysql"</code> → 3306</div>
+                <div class="emoji-item"><code>"redis"</code> → 6379</div>
+            </div>
+        </section>
+        
+        <section class="section">
+            <h2>リンク</h2>
+            <div class="install-options">
+                <a href="https://github.com/dkurokawa/vscode-port-monitor" class="install-btn">📦 GitHub</a>
+                <a href="https://marketplace.visualstudio.com/items?itemName=dkurokawa.vscode-port-monitor" class="install-btn">🏪 VS Code Marketplace</a>
+                <a href="https://github.com/dkurokawa/vscode-port-monitor/issues" class="install-btn">🐛 Issues</a>
+            </div>
+        </section>
+    </div>
+    
+    <script>
+        // Add smooth scroll behavior
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+EOF
+
+# Replace version placeholders
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS
+    sed -i '' "s/VERSION_PLACEHOLDER/${VERSION}/g" .html/instruction.html
+else
+    # Linux
+    sed -i "s/VERSION_PLACEHOLDER/${VERSION}/g" .html/instruction.html
+fi
+
+echo "✅ Generated .html/instruction.html (version ${VERSION})"
+echo "📄 File size: $(ls -lh .html/instruction.html | awk '{print $5}')"
+echo "📅 Build date: ${BUILD_DATE}"

@@ -119,7 +119,10 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "package": "vsce package",
-    "publish": "vsce publish"
+    "publish": "vsce publish",
+    "version": "npm run generate-docs && git add -A",
+    "postversion": "./scripts/post-version.sh",
+    "generate-docs": "./scripts/generate-docs.sh"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
