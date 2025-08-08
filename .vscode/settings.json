@@ -1,0 +1,12 @@
+{
+    "portMonitor.hosts": {
+        "etc": {"3000-3040": "",
+            "__CONFIG": {
+                "compact": true,
+                "show_title": false
+            }
+        }
+    },
+    "portMonitor.statusBarPosition": "left",
+    "portMonitor.emojiMode": "replace"
+}

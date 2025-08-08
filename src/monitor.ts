@@ -45,7 +45,6 @@ export class PortMonitor {
 
             return portInfo;
         } catch (error) {
-            console.error(`Error checking port ${host}:${port}:`, error);
             return {
                 host,
                 port,
@@ -93,7 +92,6 @@ export class PortMonitor {
                 const results = await this.checkMultiplePorts(portConfigs);
                 callback(results);
             } catch (error) {
-                console.error('Error during port monitoring:', error);
             }
         }, intervalMs);
 
@@ -120,7 +118,6 @@ export class PortMonitor {
     public async forceUpdate(monitorId: string): Promise<void> {
         // In this simplified version, force update is just a trigger for the next check
         // The actual update will happen in the next interval cycle
-        console.log(`Force update requested for monitor ${monitorId}`);
     }
 
     /**
@@ -194,7 +191,6 @@ export class PortMonitor {
             return processes.length > 0 ? processes : null;
         } catch (error) {
             // Process info is optional, don't throw error
-            console.debug(`Could not get process info for port ${port}:`, error);
         }
         
         return null;

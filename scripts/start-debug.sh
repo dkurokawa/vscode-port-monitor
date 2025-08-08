@@ -6,7 +6,8 @@ echo "Compiling extension..."
 npm run compile
 
 echo "Starting Extension Development Host..."
-code --extensionDevelopmentPath=/Users/kurokawadaisuke/projects/vscode-port-monitor --new-window
+EXT_PATH="$(cd "$(dirname "$0")/.."; pwd)"
+code --extensionDevelopmentPath="$EXT_PATH" --new-window
 
 echo "Extension Development Host started!"
 echo "The extension will be loaded in a new VS Code window."

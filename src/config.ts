@@ -11,7 +11,6 @@ export interface GroupSettings {
 
 export interface GroupConfigs {
     compact?: boolean;
-    bgcolor?: string;
     separator?: string;
     show_title?: boolean;
 }
@@ -34,7 +33,6 @@ export interface PortMonitorConfig {
         free: string;
     };
     intervalMs: number;
-    backgroundColor?: string;
     statusBarPosition?: 'left' | 'right';
 }
 
@@ -112,7 +110,6 @@ export class ConfigManager {
         
         // Get other settings, using defaults only if not configured
         const intervalMs = this.config.get<number>('intervalMs');
-        const backgroundColor = this.config.get<string>('backgroundColor');
         const statusBarPosition = this.config.get<'left' | 'right'>('statusBarPosition');
         
         return {
@@ -122,7 +119,6 @@ export class ConfigManager {
             emojiMode,
             statusIcons,
             intervalMs: Math.max(1000, intervalMs !== undefined ? intervalMs : 3000),
-            backgroundColor,
             statusBarPosition
         };
     }
@@ -305,11 +301,13 @@ Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
             })
         );
         
-        if (hasNestedGroups && groupName === '__NOTITLE') {
-            // Handle nested groups under __NOTITLE
+        if (hasNestedGroups) {
+            // Handle nested groups
             for (const [subGroupName, subGroupData] of Object.entries(groupData)) {
-                if (!subGroupName.startsWith('__')) {
-                    ConfigManager.processGroupData(subGroupName, subGroupData, defaultGroupConfigs, result, portLabels);
+                if (!subGroupName.startsWith('__') && typeof subGroupData === 'object' && subGroupData !== null) {
+                    // For nested groups, pass the subgroup name unless we're in __NOTITLE
+                    const effectiveGroupName = groupName === '__NOTITLE' ? subGroupName : groupName;
+                    ConfigManager.processGroupData(effectiveGroupName, subGroupData, defaultGroupConfigs, result, portLabels);
                 }
             }
         } else {
@@ -317,7 +315,9 @@ Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
             const groupConfigs = { ...defaultGroupConfigs, ...(groupData as any).__CONFIG };
             
             // Get port entries (all keys except those starting with __)
-            const portEntries = Object.entries(groupData).filter(([key]) => !key.startsWith('__'));
+            // Preserve original order from configuration
+            const portEntries = Object.entries(groupData)
+                .filter(([key]) => !key.startsWith('__'));
             
             for (const [portStr, label] of portEntries) {
                 const port = parseInt(portStr);
@@ -467,8 +467,17 @@ Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
         }
 
         const result: any = {};
+        // First, preserve __CONFIG if it exists
+        let savedConfig: any = null;
+        if (config.__CONFIG) {
+            savedConfig = config.__CONFIG;
+        }
+        
         for (const [key, value] of Object.entries(config)) {
-            if (typeof key === 'string' && /^\d+-\d+$/.test(key)) {
+            if (key === '__CONFIG') {
+                // Skip __CONFIG here, we'll add it back after expansion
+                continue;
+            } else if (typeof key === 'string' && /^\d+-\d+$/.test(key)) {
                 // Expand range key
                 const [start, end] = key.split('-').map(Number);
                 for (let port = start; port <= end; port++) {
@@ -478,6 +487,12 @@ Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
                 result[key] = ConfigManager.step2_ExpandPortRanges(value);
             }
         }
+        
+        // Restore __CONFIG after expansion
+        if (savedConfig) {
+            result.__CONFIG = savedConfig;
+        }
+        
         return result;
     }
     
@@ -597,7 +612,7 @@ Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
         return result;
     }
     
-    // Legacy method - kept for backward compatibility but no longer used
+    /* Legacy method - no longer used
     private static expandPortRanges(config: any): any {
         if (typeof config !== 'object' || config === null) {
             return config;
@@ -632,7 +647,9 @@ Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
         }
         return result;
     }
+    */
 
+    /* Legacy method - no longer used
     private static convertPortArraysToObjects(config: any): any {
         if (typeof config !== 'object' || config === null) {
             return config;
@@ -673,4 +690,5 @@ Correct: {"${Object.values(hostValue)[0]}": "${Object.keys(hostValue)[0]}"}`);
         }
         return result;
     }
+    */
 }

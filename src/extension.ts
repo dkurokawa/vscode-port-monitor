@@ -24,14 +24,12 @@ export class PortMonitorExtension {
     private portObjects: Record<string, PortObject> = {};
     private displayConfig: {
         statusIcons: { inUse: string; free: string };
-        backgroundColor?: string;
         globalEmojiMode: 'prefix' | 'replace' | 'suffix';
     } | null = null;
     private currentPortResults: PortInfo[] = [];
 
     constructor(private _context: vscode.ExtensionContext) {
         try {
-            console.log('Initializing PortMonitorExtension...');
             this.monitor = new PortMonitor();
             this.configManager = ConfigManager.getInstance();
             
@@ -43,9 +41,7 @@ export class PortMonitorExtension {
             this.statusBarItem.show();
             
             this.initialize();
-            console.log('PortMonitorExtension initialized successfully');
         } catch (error) {
-            console.error('Error initializing PortMonitorExtension:', error);
             throw error;
         }
     }
@@ -68,7 +64,6 @@ export class PortMonitorExtension {
 
     private registerCommands(): void {
         try {
-            console.log('Registering commands...');
             const commands = [
                 vscode.commands.registerCommand('portMonitor.refresh', () => this.refreshPortStatus()),
                 vscode.commands.registerCommand('portMonitor.showLog', (portInfo?: PortInfo) => this.showProcessLog(portInfo)),
@@ -77,9 +72,7 @@ export class PortMonitorExtension {
             ];
 
             this.disposables.push(...commands);
-            console.log('Commands registered successfully');
         } catch (error) {
-            console.error('Failed to register commands:', error);
             throw error;
         }
     }
@@ -93,12 +86,22 @@ export class PortMonitorExtension {
             hosts: rawConfig.get('hosts'),
             intervalMs: rawConfig.get('intervalMs'),
             portLabels: rawConfig.get('portLabels'),
-            statusIcons: rawConfig.get('statusIcons'),
-            backgroundColor: rawConfig.get('backgroundColor')
+            statusIcons: rawConfig.get('statusIcons')
         });
         
         if (validationErrors.length > 0) {
-            vscode.window.showErrorMessage(`Port Monitor configuration error: ${validationErrors.join(', ')}`);
+            const action = await vscode.window.showInformationMessage(
+                'Port Monitor needs configuration. Would you like to add port settings?',
+                'Open Settings',
+                'Later'
+            );
+            
+            if (action === 'Open Settings') {
+                this.openSettings();
+            }
+            
+            this.statusBarItem.text = "Port Monitor: Add Configuration";
+            this.statusBarItem.tooltip = `${validationErrors.join(', ')}\n\nClick to open settings`;
             return;
         }
 
@@ -129,7 +132,6 @@ export class PortMonitorExtension {
 
         // Parse configuration (mode support)
         const hostConfigs = ConfigManager.parseHostsConfig(config);
-        console.log('[PortMonitor] Parsed host configs:', hostConfigs);
 
         if (hostConfigs.length === 0) {
             // Check if there are configuration errors to show helpful messages
@@ -137,11 +139,39 @@ export class PortMonitorExtension {
             const structureErrors = ConfigManager.validateHostsStructure(rawConfig.get('hosts') || {});
             
             if (structureErrors.length > 0) {
-                this.statusBarItem.text = "Port Monitor: Configuration Error";
-                this.statusBarItem.tooltip = `Configuration Issues:\n${structureErrors.join('\n')}\n\nClick to open settings`;
+                this.statusBarItem.text = "$(add) Port Monitor: Fix Configuration";
+                this.statusBarItem.tooltip = `Configuration needs fixing:\n${structureErrors.join('\n')}\n\nClick to open settings and fix the issues`;
+                
+                // Show helpful prompt
+                const action = await vscode.window.showInformationMessage(
+                    'Port Monitor configuration needs fixing. Would you like to review the settings?',
+                    'Open Settings',
+                    'Show Example',
+                    'Later'
+                );
+                
+                if (action === 'Open Settings') {
+                    this.openSettings();
+                } else if (action === 'Show Example') {
+                    await this.showConfigExample();
+                }
             } else {
-                this.statusBarItem.text = "Port Monitor: No ports configured";
-                this.statusBarItem.tooltip = "Add ports to monitor in settings.\nExample: {\"localhost\": {\"3000\": \"app\", \"3001\": \"api\"}}\n\nClick to open settings";
+                this.statusBarItem.text = "$(add) Port Monitor: Add Ports";
+                this.statusBarItem.tooltip = "No ports configured yet.\nClick to add ports to monitor\n\nExample: {\"localhost\": {\"3000\": \"app\", \"3001\": \"api\"}}";
+                
+                // Show welcome prompt
+                const action = await vscode.window.showInformationMessage(
+                    'Welcome to Port Monitor! Would you like to add ports to monitor?',
+                    'Configure Now',
+                    'Show Example',
+                    'Later'
+                );
+                
+                if (action === 'Configure Now') {
+                    this.openSettings();
+                } else if (action === 'Show Example') {
+                    await this.showConfigExample();
+                }
             }
             return;
         }
@@ -164,7 +194,6 @@ export class PortMonitorExtension {
         // Store display configuration
         this.displayConfig = {
             statusIcons: config.statusIcons,
-            backgroundColor: config.backgroundColor,
             globalEmojiMode: config.emojiMode || 'replace'
         };
 
@@ -208,7 +237,7 @@ export class PortMonitorExtension {
     private applyPortEmojis(portEmojis?: Record<string, string | PortEmojiConfig>, globalMode?: 'prefix' | 'replace' | 'suffix'): void {
         if (!portEmojis) return;
         
-        for (const [port, portObj] of Object.entries(this.portObjects)) {
+        for (const [, portObj] of Object.entries(this.portObjects)) {
             const emoji = portEmojis[portObj.label];
             if (emoji) {
                 portObj.emoji = emoji;
@@ -236,7 +265,7 @@ export class PortMonitorExtension {
         
         const hostDisplays: string[] = [];
         
-        for (const [host, groups] of Object.entries(groupedPorts)) {
+        for (const [, groups] of Object.entries(groupedPorts)) {
             const groupDisplays: string[] = [];
             
             for (const [groupName, ports] of Object.entries(groups)) {
@@ -244,6 +273,7 @@ export class PortMonitorExtension {
                 const isCompact = groupConfigs?.compact === true;
                 const separator = groupConfigs?.separator || '|';
                 const showTitle = groupConfigs?.show_title !== false;
+                
                 
                 let groupDisplay: string;
                 
@@ -277,6 +307,7 @@ export class PortMonitorExtension {
         const minPort = portNumbers[0].toString();
         const maxPort = portNumbers[portNumbers.length - 1].toString();
         
+        
         for (let i = 0; i < Math.min(minPort.length, maxPort.length); i++) {
             if (minPort[i] === maxPort[i]) {
                 commonPrefix += minPort[i];
@@ -285,20 +316,22 @@ export class PortMonitorExtension {
             }
         }
         
+        
         const portTemplates = ports.map(p => `__PORT_${p.port}`);
         
         if (commonPrefix.length >= 2) {
             // Compact format with common prefix
-            return `${commonPrefix}[${portTemplates.join(separator)}]`;
+            const result = `${commonPrefix}[${portTemplates.join(separator)}]`;
+            return result;
         } else {
             // Regular bracket format
-            return `[${portTemplates.join(separator)}]`;
+            const result = `[${portTemplates.join(separator)}]`;
+            return result;
         }
     }
 
     private onPortStatusChanged(results: PortInfo[]): void {
         if (!this.displayConfig || !this.displayTemplate) {
-            console.error('[PortMonitor] Display configuration not initialized');
             return;
         }
 
@@ -320,7 +353,7 @@ export class PortMonitorExtension {
         displayText = this.processCompactDisplays(displayText);
         
         // Replace remaining individual port placeholders
-        for (const [portKey, portObj] of Object.entries(this.portObjects)) {
+        for (const [, portObj] of Object.entries(this.portObjects)) {
             const placeholder = `__PORT_${portObj.port}`;
             if (displayText.includes(placeholder)) {
                 const portDisplay = this.renderPortDisplay(portObj);
@@ -328,12 +361,9 @@ export class PortMonitorExtension {
             }
         }
         
-        console.log('[PortMonitor] StatusBar displayText:', displayText);
         this.statusBarItem.text = displayText;
         this.statusBarItem.tooltip = this.generateTooltip(results);
 
-        // Apply background color
-        this.applyBackgroundColor(results);
     }
 
     private renderPortDisplay(portObj: PortObject, suffixForCompact?: string): string {
@@ -377,46 +407,14 @@ export class PortMonitorExtension {
         return `${statusIcon}${portObj.label}:${displayPort}`;
     }
 
-    private applyBackgroundColor(results: PortInfo[]): void {
-        let backgroundColor: string | undefined;
-
-        // 1. Check for group-level bgcolor (highest priority)
-        for (const port of results) {
-            if (port.groupConfigs?.bgcolor) {
-                backgroundColor = port.groupConfigs.bgcolor;
-                break;
-            }
-        }
-
-        // 2. Fall back to global backgroundColor
-        if (!backgroundColor && this.displayConfig?.backgroundColor) {
-            backgroundColor = this.displayConfig.backgroundColor;
-        }
-
-        // 3. Convert simple color names to theme colors
-        if (backgroundColor) {
-            backgroundColor = this.convertColorNameToThemeColor(backgroundColor);
-        }
-
-        this.statusBarItem.backgroundColor = backgroundColor ? new vscode.ThemeColor(backgroundColor) : undefined;
-    }
-
-    private convertColorNameToThemeColor(color: string): string {
-        const colorMap: Record<string, string> = {
-            'red': 'statusBarItem.errorBackground',
-            'yellow': 'statusBarItem.warningBackground', 
-            'blue': 'statusBarItem.prominentBackground',
-            'green': 'statusBarItem.remoteBackground'
-        };
-        
-        return colorMap[color.toLowerCase()] || color;
-    }
 
     private processCompactDisplays(displayText: string): string {
         // Find compact display patterns: commonPrefix[__PORT_xxx separator __PORT_yyy]
         const compactPattern = /(\d{2,})\[([^\]]+)\]/g;
         
+        
         return displayText.replace(compactPattern, (match, commonPrefix, content) => {
+            
             // Detect separator by finding the pattern between port placeholders
             const portMatches = content.match(/__PORT_\d+/g);
             let separator = '|'; // default
@@ -430,6 +428,7 @@ export class PortMonitorExtension {
                 }
             }
             
+            
             // Split by the detected separator
             const parts = content.split(separator);
             const portDisplays: string[] = [];
@@ -441,6 +440,7 @@ export class PortMonitorExtension {
                 if (portMatch) {
                     const portNumber = parseInt(portMatch[1]);
                     const portObj = this.portObjects[portNumber.toString()];
+                    
                     
                     if (portObj) {
                         // Calculate suffix for compact display
@@ -454,7 +454,8 @@ export class PortMonitorExtension {
                 }
             }
             
-            return `${commonPrefix}[${portDisplays.join(separator)}]`;
+            const result = `${commonPrefix}[${portDisplays.join(separator)}]`;
+            return result;
         });
     }
 
@@ -652,6 +653,84 @@ Use 'portMonitor.showPortSelector' command to access port-specific actions.
         vscode.commands.executeCommand('workbench.action.openSettings', 'portMonitor');
     }
 
+    private async showConfigExample(): Promise<void> {
+        const examples = `Port Monitor Configuration Examples
+=====================================
+
+1. Basic Configuration (Host Mode):
+{
+  "portMonitor.hosts": {
+    "localhost": {
+      "3000": "Frontend",
+      "3001": "Backend API",
+      "5432": "PostgreSQL",
+      "6379": "Redis"
+    }
+  }
+}
+
+2. Group Configuration:
+{
+  "portMonitor.hosts": {
+    "Web Services": [3000, 3001, 3002],
+    "Databases": [5432, 6379, 27017],
+    "Development": {
+      "4200": "Angular",
+      "8080": "Spring Boot",
+      "9229": "Node Debug"
+    }
+  }
+}
+
+3. Advanced Configuration with Emojis:
+{
+  "portMonitor.hosts": {
+    "localhost": {
+      "3000": "React",
+      "3001": "API",
+      "5432": "DB"
+    }
+  },
+  "portMonitor.portEmojis": {
+    "React": "⚛️",
+    "API": "🚀",
+    "DB": "🗄️"
+  },
+  "portMonitor.emojiMode": "replace"
+}
+
+4. Compact Display:
+{
+  "portMonitor.hosts": {
+    "Web": {
+      "group": [3000, 3001, 3002],
+      "compact": true,
+      "separator": "|"
+    }
+  }
+}
+
+Click "Open Settings" in the notification to configure your ports.`;
+
+        const doc = await vscode.workspace.openTextDocument({
+            content: examples,
+            language: 'jsonc'
+        });
+        
+        await vscode.window.showTextDocument(doc);
+        
+        // Show action to open settings after viewing examples
+        const action = await vscode.window.showInformationMessage(
+            'Ready to configure Port Monitor?',
+            'Open Settings',
+            'Close'
+        );
+        
+        if (action === 'Open Settings') {
+            this.openSettings();
+        }
+    }
+
     private async showPortSelector(): Promise<void> {
         if (!this.currentPortResults || this.currentPortResults.length === 0) {
             vscode.window.showInformationMessage('No ports are currently being monitored');
@@ -705,14 +784,11 @@ Use 'portMonitor.showPortSelector' command to access port-specific actions.
 }
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('PortMonitor extension activating...');
     
     try {
         const extension = new PortMonitorExtension(context);
         context.subscriptions.push(extension);
-        console.log('PortMonitor extension activated successfully');
     } catch (error) {
-        console.error('Failed to activate PortMonitor extension:', error);
         vscode.window.showErrorMessage(`Port Monitor activation failed: ${error}`);
     }
 }

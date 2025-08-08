@@ -39,3 +39,5 @@ Thumbs.db
 # Development internal files
 forAI.txt
 .claude/**
+CLAUDE.md
+NEXT_TASKS.md

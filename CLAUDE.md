@@ -1,126 +1,174 @@
-# CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+---
 
-## Project Overview
+# Port Management with Portman
 
-This is a VS Code extension for monitoring network ports with intelligent configuration processing and real-time status updates. The extension uses zero external dependencies for security, relying only on native Node.js modules.
+This project uses **Portman** for centralized port management. When working with ports in this project, always use Portman to check and update port configurations.
 
-## Essential Commands
+## IMPORTANT: Port Configuration Check and Update
+
+### 1. First, check the current Portman assignment for this project:
 
 ```bash
-# Development
-npm run compile        # Compile TypeScript to JavaScript
-npm run watch         # Watch mode - recompiles on file changes
+# Get the assigned port for this project
+# For sub-projects, use parent/child format
+PROJECT_NAME=$(basename "$PWD")
+PARENT_DIR=$(basename "$(dirname "$PWD")")
 
-# Testing
-npm test              # Run all Jest tests
-npm run test:watch    # Run tests in watch mode
-npm run test:coverage # Generate test coverage report
-npm run start-test-servers # Start servers for testing
+# Check if this is a sub-project (e.g., in apis/, services/, apps/ directories)
+if [[ "$PARENT_DIR" =~ ^(apis|services|apps|packages)$ ]]; then
+    PROJECT_ID="$PARENT_DIR/$PROJECT_NAME"
+else
+    PROJECT_ID="$PROJECT_NAME"
+fi
 
-# Publishing
-npm run package      # Create .vsix package
-npm run publish      # Publish to VS Code marketplace
+ASSIGNED_PORT=$(portman get "$PROJECT_ID" --json | jq -r .port)
+echo "Portman assigned port for $PROJECT_ID: $ASSIGNED_PORT"
 ```
 
-## Architecture Overview
+**Project Naming Convention:**
+- **Regular projects**: Use project name directly (e.g., `ai-image-server`)
+- **Sub-projects**: Use `parent/child` format (e.g., `apis/gateway-api`, `apis/weather-api`)
+- **Common parent directories**: `apis/`, `services/`, `apps/`, `packages/`
 
-### Core Modules
+This ensures unique identification for projects with similar names in different contexts.
 
-1. **extension.ts**: Entry point managing VS Code extension lifecycle
-   - Activates on startup
-   - Manages monitor instances per workspace
-   - Handles configuration changes and commands
+### 2. Check if the project is using the correct port:
 
-2. **config.ts**: 5-step intelligent configuration processing pipeline
-   - Well-known port replacement (e.g., "http" → 80)
-   - Port range expansion ("3000-3009" → [3000, 3001, ...])
-   - Smart grouping with __NOTITLE
-   - Array to object conversion
-   - Structure normalization
+Search for hardcoded ports in the project and compare with Portman's assignment:
+- `.env` files
+- `docker-compose.yml` or `docker-compose.yaml`
+- Configuration files (`.json`, `.yaml`, `.yml`)
+- Source code files (`.js`, `.ts`, `.py`, `.go`, etc.)
 
-3. **monitor.ts**: Core monitoring engine
-   - Uses native Node.js net module for TCP connections
-   - Event-driven architecture with status updates
-   - Handles connection attempts and process management
-   - Intelligent process detection with server/client prioritization
+### 3. Update ports if they don't match:
 
-4. **labelResolver.ts** & **patternMatcher.ts**: Pattern-based port labeling
-   - Supports glob patterns for flexible matching
-   - Resolves labels based on workspace patterns
+**If the project is using a different port than Portman's assignment:**
 
-### Configuration Flow
+1. **Check for conflicts first:**
+   ```bash
+   # Check if the current port is already assigned to another project
+   portman list --json | jq '.[] | select(.port == CURRENT_PORT_NUMBER)'
+   ```
 
-The extension supports multiple configuration formats that are automatically transformed:
+2. **If there's a conflict, consult with the user:**
+   - "Project X is using port YYYY, but Portman has assigned port ZZZZ"
+   - "Another project (NAME) is already using port YYYY"
+   - Ask: "Should I update to use Portman's assigned port ZZZZ, or assign a different port?"
 
-```typescript
-// Simple array format
-[3000, 3001, "3002-3009", "http"]
+3. **Update all occurrences to use Portman's port:**
+   - `.env`: `PORT=ZZZZ`
+   - `docker-compose.yml`: Update all port mappings
+   - Source code: Replace hardcoded port numbers
+   - Configuration files: Update port settings
 
-// Transforms through 5 steps to:
+### 4. Common patterns to update:
+
+#### .env files:
+```bash
+# Replace
+PORT=3000
+# With
+PORT=$ASSIGNED_PORT
+```
+
+#### docker-compose.yml:
+```yaml
+# Replace
+ports:
+  - "3000:3000"
+# With
+ports:
+  - "${PORT:-$ASSIGNED_PORT}:${PORT:-$ASSIGNED_PORT}"
+```
+
+#### Node.js code:
+```javascript
+// Replace
+const PORT = process.env.PORT || 3000;
+// With
+const PORT = process.env.PORT || $ASSIGNED_PORT;
+```
+
+#### Package.json scripts:
+```json
 {
-  "Port Monitor": {
-    "ports": [3000, 3001, ...3009, 80],
-    "autoKill": false,
-    "logLevel": "info"
+  "scripts": {
+    "dev": "PORT=$(portman get \"$(basename $PWD)\" --json | jq -r .port) next dev",
+    "start": "PORT=$(portman get \"$(basename $PWD)\" --json | jq -r .port) node server.js"
   }
 }
 ```
 
-### Key Design Principles
+## When to Take Action:
 
-1. **Zero Dependencies**: Security-focused design using only Node.js built-ins
-2. **Intelligent Defaults**: Automatic configuration transformation
-3. **Pattern Matching**: Flexible port labeling with glob patterns
-4. **Real-time Updates**: Event-driven status bar updates
+1. **Do nothing if:** The project is already using the port assigned by Portman
+2. **Update all references if:** The project uses a different port than Portman's assignment
+3. **Ask for guidance if:**
+   - There's a port conflict with another project
+   - The project needs multiple ports
+   - The current port is in a reserved range (< 3000)
+   - You're unsure about making changes
 
-## Testing Strategy
+## New Port Assignment:
 
-Tests are in `__tests__/` directory. Run single test files:
+If the project doesn't have a Portman assignment yet:
+1. First check what port the project is currently using
+2. Determine the correct project ID using the naming convention
+3. Ask the user: "This project uses port XXXX. Should I register it with Portman as '$PROJECT_ID'?"
+4. If yes, use: `portman set "$PROJECT_ID" XXXX`
+5. If the port is already taken, ask for an alternative
+
+**Examples:**
 ```bash
-npm test -- __tests__/config.test.ts
+# Regular project
+portman set "ai-image-server" 3007
+
+# Sub-project in apis directory
+portman set "apis/gateway-api" 3040
+portman set "apis/weather-api" 3043
+
+# Sub-project in services directory
+portman set "services/auth-service" 3050
 ```
 
-Key test areas:
-- Configuration validation and transformation
-- Pattern matching and label resolution
-- Port monitoring functionality
-- Port emoji configuration and display modes
-- Process detection and prioritization
-- Edge cases and error handling
+## Dashboard
 
-## VS Code Integration Points
+View all port assignments at: http://localhost:8081
+```bash
+portman dashboard
+```
 
-1. **Settings**: 
-   - `portMonitor.hosts` - Port and host configurations
-   - `portMonitor.portEmojis` - Custom emojis for port labels
-   - `portMonitor.emojiMode` - Emoji display mode (prefix/replace/suffix)
-2. **Commands**: 
-   - `portMonitor.showPortSelector`: Open port selector with process details
-   - `portMonitor.showLog`: Show process details and actions
-   - `portMonitor.refresh`: Refresh port status
-   - `portMonitor.openSettings`: Open extension settings
-3. **Status Bar**: Real-time port status display with clickable process selection
-4. **Activation**: On VS Code startup (`onStartupFinished`)
+---
+Remember: Always ensure the project uses the port assigned by Portman!
 
-## Development Notes
+## Portman Port Management
 
-- TypeScript strict mode is enabled
-- No ESLint/Prettier config - use VS Code formatting
-- Source maps enabled for debugging
-- Jest with ts-jest for testing
-- Build output goes to `out/` directory
+This project uses Portman for port management. When assigning ports, use the following naming convention:
 
-## Common Development Tasks
+**Format**: `project-folder/identifier`
 
-When adding new features:
-1. Update types in `types.d.ts`
-2. Add tests in `__tests__/`
-3. Update configuration processing if needed
-4. Test with `npm run compile && npm test`
+Examples:
+- If this project is in `apis/apps/myapp`, use: `portman get "apis/myapp"`
+- If this project is in `services/auth`, use: `portman get "services/auth"`
+- For simple projects: `portman get "project-name"`
 
-For debugging:
-1. Use VS Code's "Run Extension" launch config
-2. Check Developer Tools console for errors
-3. Monitor status bar for real-time updates
+To get/assign a port for this project:
+```bash
+# Get the project folder structure
+PROJECT_PATH=$(pwd | sed "s|^$HOME/projects/||")
+PROJECT_NAME=$(basename "$PROJECT_PATH")
+
+# For nested projects (e.g., apis/apps/something)
+if [[ "$PROJECT_PATH" == *"apps/"* ]] || [[ "$PROJECT_PATH" == *"services/"* ]] || [[ "$PROJECT_PATH" == *"packages/"* ]]; then
+    PARENT_FOLDER=$(echo "$PROJECT_PATH" | cut -d'/' -f1)
+    PORTMAN_NAME="$PARENT_FOLDER/$PROJECT_NAME"
+else
+    PORTMAN_NAME="$PROJECT_NAME"
+fi
+
+# Get or assign port
+PORT=$(portman get "$PORTMAN_NAME" --json | jq -r .port)
+echo "Project '$PORTMAN_NAME' assigned port: $PORT"
+```
+
