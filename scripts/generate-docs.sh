@@ -6,10 +6,8 @@
 VERSION=$(grep '"version":' ../package.json | cut -d'"' -f4 | head -1)
 BUILD_DATE=$(date -u +"%Y-%m-%d")
 
-# Create ../.html directory if it doesn't exist
-mkdir -p ../.html
-
-cat > ../.html/instruction.html << 'EOF'
+# Generate .instruction.html in project root
+cat > ../.instruction.html << 'EOF'
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -544,12 +542,12 @@ EOF
 # Replace version placeholders
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS
-    sed -i '' "s/VERSION_PLACEHOLDER/${VERSION}/g" ../.html/instruction.html
+    sed -i '' "s/VERSION_PLACEHOLDER/${VERSION}/g" ../.instruction.html
 else
     # Linux
-    sed -i "s/VERSION_PLACEHOLDER/${VERSION}/g" ../.html/instruction.html
+    sed -i "s/VERSION_PLACEHOLDER/${VERSION}/g" ../.instruction.html
 fi
 
-echo "✅ Generated ../.html/instruction.html (version ${VERSION})"
-echo "📄 File size: $(ls -lh ../.html/instruction.html | awk '{print $5}')"
+echo "✅ Generated ../.instruction.html (version ${VERSION})"
+echo "📄 File size: $(ls -lh ../.instruction.html | awk '{print $5}')"
 echo "📅 Build date: ${BUILD_DATE}"
