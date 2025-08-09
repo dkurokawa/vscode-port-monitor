@@ -93,11 +93,14 @@ export class PortMonitorExtension {
             const action = await vscode.window.showInformationMessage(
                 'Port Monitor needs configuration. Would you like to add port settings?',
                 'Open Settings',
+                'Add Default Config',
                 'Later'
             );
             
             if (action === 'Open Settings') {
                 this.openSettings();
+            } else if (action === 'Add Default Config') {
+                await this.addDefaultWorkspaceConfig();
             }
             
             this.statusBarItem.text = "Port Monitor: Add Configuration";
@@ -146,12 +149,15 @@ export class PortMonitorExtension {
                 const action = await vscode.window.showInformationMessage(
                     'Port Monitor configuration needs fixing. Would you like to review the settings?',
                     'Open Settings',
+                    'Add Default Config',
                     'Show Example',
                     'Later'
                 );
                 
                 if (action === 'Open Settings') {
                     this.openSettings();
+                } else if (action === 'Add Default Config') {
+                    await this.addDefaultWorkspaceConfig();
                 } else if (action === 'Show Example') {
                     await this.showConfigExample();
                 }
@@ -163,12 +169,15 @@ export class PortMonitorExtension {
                 const action = await vscode.window.showInformationMessage(
                     'Welcome to Port Monitor! Would you like to add ports to monitor?',
                     'Configure Now',
+                    'Add Default Config',
                     'Show Example',
                     'Later'
                 );
                 
                 if (action === 'Configure Now') {
                     this.openSettings();
+                } else if (action === 'Add Default Config') {
+                    await this.addDefaultWorkspaceConfig();
                 } else if (action === 'Show Example') {
                     await this.showConfigExample();
                 }
@@ -728,6 +737,117 @@ Click "Open Settings" in the notification to configure your ports.`;
         
         if (action === 'Open Settings') {
             this.openSettings();
+        }
+    }
+
+    private async addDefaultWorkspaceConfig(): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) {
+            vscode.window.showErrorMessage('No workspace folder found');
+            return;
+        }
+
+        // Check if the workspace has a package.json to determine common ports
+        const fs = require('fs');
+        const path = require('path');
+        const packageJsonPath = path.join(workspaceFolder.uri.fsPath, 'package.json');
+        
+        let defaultPorts: Record<string, Record<string, string>> = {
+            "localhost": {
+                "3000": "app",
+                "3001": "api",
+                "5432": "postgres",
+                "6379": "redis"
+            }
+        };
+
+        // Try to detect project type and suggest appropriate ports
+        if (fs.existsSync(packageJsonPath)) {
+            try {
+                const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+                const scripts = packageJson.scripts || {};
+                
+                // Detect common frameworks
+                if (packageJson.dependencies?.next || packageJson.devDependencies?.next) {
+                    defaultPorts.localhost["3000"] = "Next.js";
+                } else if (packageJson.dependencies?.react || packageJson.devDependencies?.react) {
+                    defaultPorts.localhost["3000"] = "React";
+                } else if (packageJson.dependencies?.vue || packageJson.devDependencies?.vue) {
+                    defaultPorts.localhost["8080"] = "Vue";
+                } else if (packageJson.dependencies?.angular || packageJson.devDependencies?.angular) {
+                    defaultPorts.localhost["4200"] = "Angular";
+                }
+                
+                // Check for API frameworks
+                if (packageJson.dependencies?.express) {
+                    defaultPorts.localhost["3001"] = "Express API";
+                } else if (packageJson.dependencies?.fastify) {
+                    defaultPorts.localhost["3001"] = "Fastify API";
+                } else if (packageJson.dependencies?.nestjs) {
+                    defaultPorts.localhost["3001"] = "NestJS API";
+                }
+                
+                // Check scripts for port hints
+                Object.entries(scripts).forEach(([name, script]) => {
+                    const scriptStr = script as string;
+                    const portMatch = scriptStr.match(/--port\s+(\d+)|PORT=(\d+)/);
+                    if (portMatch) {
+                        const port = portMatch[1] || portMatch[2];
+                        defaultPorts.localhost[port] = name;
+                    }
+                });
+            } catch (error) {
+                // Continue with default ports if package.json parsing fails
+            }
+        }
+
+        // Create .vscode directory if it doesn't exist
+        const vscodeDir = path.join(workspaceFolder.uri.fsPath, '.vscode');
+        if (!fs.existsSync(vscodeDir)) {
+            fs.mkdirSync(vscodeDir, { recursive: true });
+        }
+
+        // Create or update settings.json
+        const settingsPath = path.join(vscodeDir, 'settings.json');
+        let settings: any = {};
+        
+        if (fs.existsSync(settingsPath)) {
+            try {
+                const content = fs.readFileSync(settingsPath, 'utf8');
+                settings = JSON.parse(content);
+            } catch (error) {
+                // If parsing fails, start with empty settings
+                settings = {};
+            }
+        }
+
+        // Add port monitor configuration
+        settings["portMonitor.hosts"] = defaultPorts;
+        settings["portMonitor.intervalMs"] = 5000;
+        settings["portMonitor.statusIcons"] = {
+            "inUse": "🟢",
+            "free": "⚪"
+        };
+
+        // Write settings.json
+        try {
+            fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+            
+            vscode.window.showInformationMessage(
+                'Default port configuration has been added to .vscode/settings.json',
+                'View Settings'
+            ).then(action => {
+                if (action === 'View Settings') {
+                    vscode.workspace.openTextDocument(settingsPath).then(doc => {
+                        vscode.window.showTextDocument(doc);
+                    });
+                }
+            });
+
+            // Reload configuration
+            this.onConfigurationChanged();
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to create workspace settings: ${error}`);
         }
     }
 
