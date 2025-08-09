@@ -3,13 +3,13 @@
 # Generate instruction.html for vscode-port-monitor
 
 # Get version from package.json
-VERSION=$(grep '"version":' package.json | cut -d'"' -f4 | head -1)
+VERSION=$(grep '"version":' ../package.json | cut -d'"' -f4 | head -1)
 BUILD_DATE=$(date -u +"%Y-%m-%d")
 
-# Create .html directory if it doesn't exist
-mkdir -p .html
+# Create ../.html directory if it doesn't exist
+mkdir -p ../.html
 
-cat > .html/instruction.html << 'EOF'
+cat > ../.html/instruction.html << 'EOF'
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -297,7 +297,7 @@ cat > .html/instruction.html << 'EOF'
         <div class="container">
             <h1>🔍 VSCode Port Monitor</h1>
             <p class="tagline">Real-time Port Status Display in VS Code Status Bar</p>
-            <span class="version">Version VERSION_PLACEHOLDER</span>
+            <span class="version">VERSION_PLACEHOLDER</span>
         </div>
     </header>
     
@@ -544,12 +544,12 @@ EOF
 # Replace version placeholders
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS
-    sed -i '' "s/VERSION_PLACEHOLDER/${VERSION}/g" .html/instruction.html
+    sed -i '' "s/VERSION_PLACEHOLDER/${VERSION}/g" ../.html/instruction.html
 else
     # Linux
-    sed -i "s/VERSION_PLACEHOLDER/${VERSION}/g" .html/instruction.html
+    sed -i "s/VERSION_PLACEHOLDER/${VERSION}/g" ../.html/instruction.html
 fi
 
-echo "✅ Generated .html/instruction.html (version ${VERSION})"
-echo "📄 File size: $(ls -lh .html/instruction.html | awk '{print $5}')"
+echo "✅ Generated ../.html/instruction.html (version ${VERSION})"
+echo "📄 File size: $(ls -lh ../.html/instruction.html | awk '{print $5}')"
 echo "📅 Build date: ${BUILD_DATE}"
